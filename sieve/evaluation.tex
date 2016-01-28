@@ -1,0 +1,112 @@
+\begin{table}[t]
+\centering
+\begin{tabular}{|c|l|}
+\hline
+App & \multicolumn{1}{c|}{Invariants}\\\hline
+TPC-W & $\forall \mathit{item} \in \mathit{item\_table}.~\  \mathit{item}\ldotp\mathit{stock} \geq 0$ \\\hline
+\multirow{3}{*}{RUBiS} & $\forall \mathit{item} \in \mathit{item\_table}.~\ \mathit{item}\ldotp\mathit{quantity} \geq 0$\\
+\cline{2-2}
+& $\forall u, v \in \mathit{user\_table}.~$ \\
+& $\quad u\ldotp\mathit{uname} = v\ldotp\mathit{uname} \implies u = v$\\\hline
+\end{tabular}
+\caption{Application-specific invariants}
+\label{tab:staticinvariants}
+\end{table}
+
+\section{Evaluation}
+\label{ch:sieve:sect:evaluation}
+In this section, we report our experience with implementing \tool,
+adapting existing web applications to run with \tool, and evaluating
+these systems.
+
+\subsection{Implementation}
+We implemented most of our tool using Java (15k lines of code), and changed parts of the Jahob code
+to obtain weakest preconditions in OCaml (553 lines of code)~\footnote{The lines of code is
+measured by {\tt cloc}~\cite{codecounter}.}. The
+backend storage system we used was a MySQL database. We used
+an existing Java parser~\cite{javaparser} to parse java files for generating an
+abstract syntax tree (AST). Finally, we connected our tool
+to the Gemini replication and coordination system, as presented in Section~\ref{ch:redblue:sect:gemini}, to enable both
+consistency classification and operation replication. The sourcecode is available at ~\cite{SIEVESource}.
+
+\subsection{Use cases}
+To adapt an application to use \tool, one has to annotate the
+corresponding SQL schema with the proper CRDT semantics, specify
+all invariants, and finally the original JDBC driver must be replaced
+by the driver provided by \tool, to enable
+\tool\ to intercept interactions between the application and the database.
+
+We applied \tool\ to two web application benchmarks, namely TPC-W~\cite{TPC-Wv18}
+and RUBiS~\cite{RUBiS}. Both of them simulate an online
+store and the interactions between users and the web application. 
+There are two main motivations for selecting these use cases: (1)
+both have been widely used by the community to evaluate system performance; and
+(2) both have application-specific invariants that can be violated 
+under causal consistency. We recall the
+invariants of these two applications in Table~\ref{tab:staticinvariants}. 
+(In Chapter~\ref{chapter:redblue},
+a social application is evaluated, but it made no sense to 
+include this application because it
+did not contain any invariants that could be violated under weak consistency.)
+
+For TPC-W, we use \texttt{AOSET}, \texttt{AUSET}, \texttt{UOSET} and
+\texttt{ARSET}, as specified in Table~\ref{tab:crdts}, to annotate the database tables,
+no annotations for unmodified attributes, \texttt{NUMDELTA}
+for \texttt{stock}, and \texttt{LWW} for the remaining attributes. For
+RUBiS, we annotate its tables with \texttt{AUSET} and \texttt{AOSET}.
+We use \texttt{NUMDELTA} as annotations for both \texttt{quantity} ({\tt stock}) and \texttt{numOfBids}, and
+no annotations or \texttt{LWW} for the remaining attributes. For additional details, we refer the interested reader to the code available in~\cite{SIEVESampleData2014}.
+
+In terms of the time required to do this adaptation, we do not report results
+for TPC-W as we relied on this use case during the design and development phase
+of \tool. However for the RUBiS use case, the entire process
+was concluded in only a few hours.
+An interesting point to highlight is that \tool\ is
+able to detect inconsistencies between these annotations \changebars{such as
+tagging a table as update-only ({\tt UOSET}) but the original code contains insert
+sql commands against that table }{}, enabling
+programmers to  correct  mistakes such as type omissions in the SQL schema
+that are inconsistent with the CRDT annotations.
+
+In both the RedBlue consistency framework~\ref{chapter:redblue} and SIEVE,
+the effort we made analyzing application code to determine
+invariants and merge semantics is unavoidable. 
+In the former case, however,
+we additionally spent a significantly larger amount of time manually implementing 
+merge semantics, and classifying shadow operations by taking into account their
+properties, for every application. \tool\ eliminates
+all this manual work, and limits human error.
+
+\subsection{Experimental setup}
+All reported experiments were obtained by deploying applications on a local cluster,
+where each machine has
+2*6 i7 cores and 48GB RAM, and runs Linux 3.2.48.1 (64bit), MySQL 5.5.18,
+Tomcat 6.0.35, and Java 1.7.0. The reason we did not include
+geo-distributed experiments is that we wanted
+to extensively focus on evaluating various aspects of \tool, instead of
+performance benefits enhanced by RedBlue consistency, which are already
+shown in Section~\ref{ch:redblue:sect:eval}.
+
+\subsection{Experimental results}
+Our experimental work aims at evaluating both the static analysis component of \tool\ and also 
+the runtime component, which includes a performance
+comparison between each application using our tool, its unmodified version, and
+its version under RedBlue consistency where the entire classification
+is done manually and offline.
+
+Concerning the static analysis component we focus on the following main questions: 
+%$(i)$ What are the outputs generated by the static analysis component?
+\begin{enumerate}
+\item How long does the static analysis process take to complete?
+\item What is the scalability of the static analysis component in relation to the size of the code base?
+\end{enumerate}
+
+For the runtime component of \tool\ we focus on the following main questions: 
+\begin{enumerate}
+\item Is the runtime classification of shadow operations accurate?
+\item What is the (runtime) overhead for adapted applications compared to their stand-alone unmodified counterparts?
+\item What are the performance gains obtained through weakly consistent replication using \tool?
+\end{enumerate}
+\input{./sieve/evaluation-static}
+
+\input{./sieve/evaluation-runtime}

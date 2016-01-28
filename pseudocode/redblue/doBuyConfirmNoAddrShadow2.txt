@@ -1,0 +1,5 @@
+doBuyConfirmDecre'($orderId$,$cartId$,$itId$,$qty$,$cost$,$L\_TS$){
+ exec(INSERT INTO orderTb VALUES($orderId$,$itId$,$qty$,$cost$,$L\_TS$));
+ exec(UPDATE itemTb SET $item.stock -= qty$);
+ exec(UPDATE itemTb SET $item.l\_ts = L\_TS$ WHERE $item.l\_ts < L\_TS$);
+ exec(UPDATE cartContentTb SET $flag=TRUE$ WHERE $id=itId$ AND $cid=cartId$ AND $l\_ts<=L\_TS$);}

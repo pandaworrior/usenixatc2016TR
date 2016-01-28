@@ -1,0 +1,3 @@
+func shdNewCart(int cartId, LC ts){
+  //add (cartId, ts) to persistent table
+}

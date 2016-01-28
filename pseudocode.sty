@@ -1,0 +1,49 @@
+
+%%%%%%%%%%%% PSEUDO CODE MACROS
+\usepackage{boxedminipage}
+
+
+% Use tabbing for pseudocode
+\newcommand{\pseudocodetabrule}{00 \= 0 \= 0 \= 0 \= 0 \= 0 \= 0 \= \kill }
+\newenvironment{pseudocode}{\begin{tabbing}\pseudocodetabrule}
+  {\end{tabbing}}
+\newenvironment{pseudocodebox}{\noindent\begin{boxedminipage}{\columntextwidth}\begin{tabbing}\pseudocodetabrule}
+  {\end{tabbing}\end{boxedminipage}}
+
+% listings package
+\usepackage{listings}
+% Define style used for pseudocode so that figures are consistent
+\lstdefinelanguage{lstpseudocode}
+{keywordstyle={\bf},
+  morekeywords={when,foreach,if,then,do,else,send,rcv,to,from,return,true,false,call,func,while}, % bold keywords
+  morecomment=[l][\em]{//}, % emph // these comments
+  moredelim=[is][\ttfamily]{|}{|}, % typewriter |these words|
+  moredelim=[is][\itshape]{<<}{>>}, % italicize <<these words>>
+  morestring=[b]",
+  %morestring=[s]{>}{<},
+  %morecomment=[s]{<?}{?>}
+}[keywords,comments,directives]
+
+\newcommand{\pseudocodeinput}[2][]
+{%\setlength{\fboxsep}{.75pc}%
+  \setlength{\intextsep}{-1.5pt}%
+  \begin{boxedminipage}{\columnwidth}\small%\scriptsize%
+    \lstset{language=lstpseudocode,
+      xleftmargin=0pc,
+      xrightmargin=0pc,
+      aboveskip=0pc,
+      belowskip=0pc,
+      numberblanklines=false,
+      sensitive=true,
+      numbers=none,%left,
+      escapechar=@,
+      mathescape=true,
+      breaklines=true,
+      commentstyle=\textit,
+      basicstyle=\ttfamily,
+      columns=fullflexible}
+    \lstinputlisting[#1]{#2}%
+  \end{boxedminipage}}
+
+
+

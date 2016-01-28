@@ -1,0 +1,254 @@
+\section{Background}
+\label{ch:sieve:sect:background}
+
+%In this section, we provide background on the techniques that our
+%work builds upon.
+Before presenting the various aspects of \tool, we first
+introduce the system model it builds upon, and the operation classification 
+methodology it relies on.
+
+%\subsection{RedBlue consistency}
+%\label{sect:backredblue}
+
+In previous work~\cite{Li2012RedBlue}, we defined RedBlue
+consistency, where operations can be labeled red (strongly consistent)
+or blue (weakly consistent). Red operations are totally ordered with
+respect to each other, meaning that they execute in the same relative
+order at all replicas, and therefore no two red operations execute
+concurrently. (This corresponds to the requirements of serializability.)
+ In contrast, blue operations can be reordered with
+respect to other operations, provided they preserve causality
+(corresponding to causal consistency).
+
+A pre-requisite to being able to label operations as blue is
+that operations should commute, so that executing them in a different
+order at various replicas does not lead to a divergent replica state.
+To increase the space of commutative operations, we proposed a change in the state machine replication model such that
+operations are split between a generator operation running only on the
+replica that first receives the operation and producing no side
+effects, and a shadow operation sent to all replicas, which effectively applies the
+side effects in a commutative way. More formally, in the original state
+machine replication model, an operation $u$
+deterministically modifies the state of a replica from $S$ to $S'$
+(denoted as $S+u=S'$). In the proposed model, the application
+programmer decomposes every operation $u$ into generator and shadow
+operations $g_u$ and $h_u(S)$, respectively, where $S$ is the replica state
+against which $g_u$ was executed. The pair of generator and shadow operations
+must satisfy the
+%Furthermore, there is the
+following correctness requirement: for any state $S$, $S+g_u = S$ and $S+h_u(S) = S+u$.
+
+Given this system model, we defined sufficient
+conditions for labeling operations in a way that ensures that
+application invariants are not violated.
+In particular, a shadow operation can be labeled blue if
+it commutes with all other shadow operations, and it is {\em invariant
+safe}, 
+%meaning that for all states $S$ and $S'$ that preserve the
+%invariants, the state $S'+h_u(S)$ also does so.
+meaning that if states $S$ and $S'$ preserve the
+invariants, then the state $S'+h_u(S)$ does so as well.
+
+%\subsection{Commutative replicated data types}
+
+%Commutative replicated data types (CRDTs)~\cite{Shapiro11Conflict,Preguica2009CRDT} are  data types
+%whose operations commute, allowing state to converge
+%irrespectively of the order by which a given set of
+%operations is executed. There already exist a series of systems and libraries
+%that implement CRDTs for the most relevant data types, such as sets,
+%counters, strings, etc. Programmers can leverage CRDTs by modifying
+%their code to store all state using these data types. 
+
+
+\if 0
+
+In this section, we basically iteratively present the fundamental
+techniques that we built our tool on the top of. For example,
+commutative replicated data types, shadow operation, weakest
+precondition. Perhaps we also can add something like system model.
+
+\allen{What is the point of this section?  Reading it now, it touches
+  on technique-key words that are, by-and-large, meaningless to me
+  because I don't understand the context for why they are being
+  brought up.  Is this supposed to be a system model section that
+  makes explicit the technical challenges that induce our results?  or
+  what?}
+
+\subsection{System model}
+In our context, every geo-replicated service fully replicates its data across multiple sites. 
+Each site runs the same configuration consisting of a persistent storage
+system, a set of application proxy servers, and a coordinator. Communication between
+sites helps accomplish data replication and keep data consistency. 
+
+User request is always sent to a physically nearby site, and executed within this site
+against the local state. If the user request is mapped to a set of eventually
+consistent operations, then it can immediately commit to the system. If the user request contains a strongly consistent
+operation, however, it cannot commit silently without contacting other sites. In this case,
+an across-site coordination is being invoked to offer a total order. Upon a commit,
+the corresponding results will be released to the users, and the side-effects will
+be propagated to and replicated in all other sites.
+
+
+\allen{The system model *probably* needs to include RBC and references
+  to shadow operations.  Though I am not sure at hte moment.}
+
+\begin{table*}[!t]
+\centering
+\begin{tabular}{|c|c|p{8cm}|}
+\hline
+Abstract types & Inherited types & Description \\
+\hline
+NUMDELTA & Integer, Double, Float, DateTime & 
+  Its computation is either increment or decrement. Its commutative solution 
+  is to apply a delta with the same type (either negative or positive) to itself.  \\ \hline
+LWW & Integer, Double, Float, DateTime, String & 
+  LWW stands for last-writer-win. Among a set of concurrent operations 
+  for the same data, only one of them will be deterministically selected 
+  to install the final value. The selection depends on a total order.\\ \hline
+\multirow{4}{*}{SET} & AOSET & It is an add-only set, which only supports disjoint and non-concurrent
+	  insertions.\\
+ \cline{2-3} 
+&  UOSET & It is an update-only set, which only support concurrent updates.\\
+ \cline{2-3} 
+&  AUSET & It is an add-and-update set, which supports unique insertion and concurrent updates.\\ 
+ \cline{2-3} 
+&  ARSET & It is an add-and-remove set, which support concurrent insertions, updates
+	    and deletes. Among concurrent insertions of the same data, only one insertion coming first will
+	    succeed, and the rest of them will be translated into updates. Among concurrent updates of the same
+	    data, only one will be deterministically selected to install the final value. Among concurrent
+	    deletions of the same data, only one with highest ordering information will eventually remove the 
+	    data.\\
+\hline
+\end{tabular}
+\caption{Commutative replicated data types (CRDTs) supported by our type system}
+\label{tab:crdts}
+\end{table*}
+  
+
+\subsection{Commutative replicated data types}
+\allen{Commutativity is not important until after I understand gemini,
+  red blue consistency, and shadow operations.  CRDTs allow us to
+  easily implement commutative shadow operations.  They cannot/should
+  not be mentioned before I know i) what are shadow operations, ii)
+  why does commutativity matter.}
+
+Commutative replicated data types (CRDTs) are a set of data types, whose operations commute
+even while being concurrently executed. It is the key technique that allows more eventually 
+consistent operations to be constructed. All built-in CRDTs are summarized in Table~\ref{tab:crdts}.
+
+In our system, there are two hidden fields for each record, which are
+a deleted flag and a logic timestamp. Once a record is deleted, it will
+not be removed from the storage. Instead, we set its deleted flag to true to
+exclude it from the result set of the subsequent reads. To do so is to resolve
+ conflicts with some concurrent updates, which might recover this record from
+being deleted. The logic timestamp defines a comparison 
+function to tell the order of two arbitrary operations, and is mainly used
+to apply last-writer-win strategies.
+
+{\bf How to use CRDTs? } Currently, we require a small amount of programmer input, which
+is a set of annotations specifying what commutative strategy they want
+to apply to resolve conflicts. In principle, we could infer the proper
+CRDT for each data object, however, we leave this as a future work. We
+expose programmers with a type system, which consists of a set of
+CRDTs (shown in Table~\ref{tab:crdts}).  Programmers could use these
+types to annotate either the sql schema or the Java code of their
+applications to produce commutative shadow operations. Programmers
+have to annotate each "CREATE TABLE" statement with CRDT types. The
+annotation syntax is shown as follows:
+
+\begin{equation}
+ @[CRDT Name] [Table Name | Data Field Name]
+\end{equation}
+
+\begin{figure}[!ht]
+\begin{subfigure}[Original sql schema]{
+\begin{minipage}[b]{0.5\textwidth}
+\lstinputlisting{./code/sqlSchema.txt}%
+\label{fig:originalSql}
+\end{minipage}
+}
+\end{subfigure}
+\hspace{0.4cm}
+\begin{subfigure}[Annotated table definition schema. $deleted$ and $logical\_ts$ are two hidden fields.]{
+\begin{minipage}[b]{0.5\textwidth}
+\lstinputlisting{./code/annoSqlSchema.txt}%
+\label{fig:annoSql}
+\end{minipage}
+}
+\end{subfigure}
+
+\caption{The original sql schema and its annotated version.}
+\label{fig:annoSqlExample}
+\end{figure}
+
+Given a database schema shown in Figure~\ref{fig:annoSqlExample}\subref{fig:originalSql}, Figure~\ref{fig:annoSqlExample}\subref{fig:annoSql} 
+shows the annotated version of $exampleObj$.Note that if a certain table is not 
+modified (only for selection) and a data field is never updated, then they are not necessary to be annotated.
+
+\allen{database schema is from left field.  is it fundamental or implementation detail?}
+
+
+\subsection{Shadow operation}
+When replicating operations across site, the navie approach is to
+re-execute the same set of operations again. However, there exist a
+few drawback: read differe value, non-deterministic source. Therefore,
+we replicate deterministic side effects.  With the synchrous
+replication, every site will execute exactly the same operation to
+guarantte data consistency. Unlike this scheme, the asychronous
+replication The definition of \texttt{shadow operation} and its
+properties come here.
+
+\allen{I think that shadow operations should go before CRDT.  CRDTs
+  are a tool for commutativity; the shadow operation is a core part of
+  the problem we are attempting to address.\\ 1.  Given shadow
+  operations, how do we generate them automatically\\ 2.  Given
+  generated commutative shadow operations, how do we decide which are
+  red which are blue}
+
+\subsection{Classification methodology}
+The principles we use to classify operations into
+weak and strong categories are inspired by the work presented in
+~\cite{Li2012RedBlue}. The RedBlue classification methodology relies on two important
+operation properties: commutativity and invariant preservation. It works as
+follows: Only the operations
+either not commuting with all other peers or potentially
+violating invariants must be strongly consistent. All the other operations
+can be safely labeled with eventually consistent. Since, we ensure commutativity
+by design, our classification methodology only has to check invariant preservation.
+
+\subsection{Weakest precondition}
+Given any execution against system states, to ensure that this transition must
+terminate in a set of valid states, we have to take inputs or initial states into
+account, since these external inputs determine the execution path and possible side-effects.
+In other words, proving final states left by an execution are valid is equivalent to 
+identifying the initial states could lead to a set of valid final states. Generating
+proofs for each execution at runtime is very time-consuming and resource-intensive, while
+statically discovering a set of contraints on initial states for valid exeuctions are
+more promising and cheaper. These contraints is so called weakest precondition.
+
+Shortly, given a program {P} and its postcondition $R$, its weakest precondtions are 
+a set of logic formulas on the initial states guaranteeing that the final state of running
+$P$ satisfying $R$. There are a large family of verification tools being able to
+compute weakest preconditions, for instance, ESC/Java~\cite{Flanagan2002ESC}, Jack~\cite{Barthe2007JACK}, 
+Jahob~\cite{Kuncak2007Jahob}, Key~\cite{KeYBook2007}, Krakatoa~\cite{filliatre07cav}, and so on.
+We chose Jahob since it is designed to Java programs and works well with set-based 
+data structures.
+
+\allen{What problem does weakest pre-condition solve?  we certainly
+  use it at some point, but without that context and an understanding
+  of why the weakest precondition solves that problem it is a bunch of
+  noise with little informative value}
+
+\subsection{Applications}
+In general, the idea of incoporating static analysis and runtime verification
+is able to apply to all applications where some notation of invariants exist. However,
+within the current scope, we limit our implementation to any applications that are
+written in Java, store their persistent state in a relational database, and manipulate
+their state via the combination of Java logic and SQL statement. For this reason, we chose
+a few well-known applications to evaluate our tool, namely TPC-W and RUBiS. The
+two applications are both websites simulating e-commercial store. If time permits,
+we will select some other different applications.
+
+\allen{This is an intro overview of the paper.  What is the preliminaries supposed to convey?}
+
+\fi

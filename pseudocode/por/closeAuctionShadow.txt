@@ -1,0 +1,4 @@
+closeAuction'(int $itemId$, int $winner$){
+ close($itemId$);
+ exec(INSERT INTO winnerTable VALUES ($itemId$, $winner$));
+}

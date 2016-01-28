@@ -1,0 +1,133 @@
+\section{Motivation and contributions}
+\label{ch:por:sect:intro}
+\eat{In Chapter~\ref{chapter:intro}, ~\ref{chapter:redblue} and ~\ref{chapter:sieve},
+we highlight several important issues: a) replication is an essential technique to improve 
+scalability of Internet services by major providers such as Google~\cite{GoogleWeb},
+Microsoft~\cite{MicrosoftWeb}, Facebook~\cite{FacebookWeb}, or Amazon~\cite{AmazonWeb};
+b) unfortunately, replication also leads to an inherent
+tension between achieving high performance and ensuring application-specific
+properties such as state convergence (i.e., all replicas eventually reach the same final state) 
+and invariant preservation (i.e., the behavior of the system
+obeys its specification, which can be defined as a set of invariants to
+be preserved); and c) to cope with an unprecedented demand from vast user base, 
+many services not only replicate data in a data center (region), but also across
+multiple geo-graphically dispersed data centers~\cite{Sharma2015Wormhole, Corbett2012Spanner}.
+Given that latency and connectivity among data centers are constrained
+in such a global setting, the negative effects imposed by maintaining strong consistency
+become worse. This has been widely acknowledged by both industry 
+solutions~\cite{Decandia2007Dynamo} and academic research~\cite{Sovran2011PSI, Li2012RedBlue, Balegas2015Eventual, Bailis2014Avoid}.
+}
+As presented in Chapter~\ref{chapter:redblue}, our first attempt to relieve the tension between consistency and performance 
+in geo-distributed scenarios is to introduce RedBlue consistency, in which some operations can be executed 
+under strong consistency (and therefore incur in a high performance penalty) while other 
+operations can be executed under weaker consistency (namely causal consistency~\cite{Lloyd2011Causal}). 
+The core of this solution is a labeling methodology for guiding the programmer to 
+classify shadow operations (side effects of original
+application operations) into the strong and weak consistency categories. The labeling
+process works as follows: shadow operations that
+either do not commute w.r.t.\ all others or potentially violate invariants must 
+be strongly consistent, while the remaining can be weakly consistent. To make
+the adoption of \RBCN\ easy, in addition, we built \tool\ (seen in Chapter~\ref{chapter:sieve}) to 
+automate this binary decision by requiring a small amount of programmer input.
+
+\begin{figure}[t!]
+\begin{minipage}[t]{0.495\columnwidth}
+\centering
+\subfloat[\textsf{Original placeBid operation.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/por/placeBidOriginal.txt}
+\label{fig:por:placeBidOriginal}
+}
+\\
+\subfloat[\textsf{\Shadow\ \operation\ that places bids}.]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/por/placeBidShadow.txt}
+\label{fig:por:placeBidShadow}
+}
+\end{minipage}
+\hspace{2mm}
+\begin{minipage}[t]{0.495\columnwidth}
+\centering
+\subfloat[\textsf{Original closeAuction operation.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/por/closeAuctionOriginal.txt}
+\label{fig:por:closeAuctionOriginal}
+}
+\\
+\subfloat[\textsf{Shadow closeAuction' operation commits the changes.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/por/closeAuctionShadow.txt}
+\label{fig:por:closeAuctionShadow}
+}
+\end{minipage}
+\caption{Pseudocode for the original and shadow operations of the {\tt placeBid} and {\tt closeAuction} transactions in RUBiS.}
+\label{fig:por:originalandshadow}
+\end{figure}
+
+This binary classification methodology works well for many web applications, 
+but it can also lead to unnecessary coordination in some cases.
+We illustrate this with an auction service, as shown in Figure~\ref{fig:por:originalandshadow},
+ where an operation {\tt placeBid} (Figure~\ref{fig:por:placeBidOriginal}) creates 
+a new bid for an item if the corresponding auction is still open, and an 
+operation {\tt closeAuction} (Figure~\ref{fig:por:closeAuctionOriginal}) closes 
+an auction for an item, declaring a single winner. In this example, the application-specific invariant 
+is that the winner must be associated with the highest bid across all accepted bids. The
+other two subfigures (Figure~\ref{fig:por:placeBidShadow} and Figure~\ref{fig:por:closeAuctionShadow})
+depict the shadow operations of the two prior operations, respectively, guaranting
+that these shadow operations apply changes in a commutative fashion regardless of execution order.
+We omit in the Figure the commutative shadow operation generation, since it has been covered in Sections~\ref{ch:redblue:sect:casestudies}
+and ~\ref{ch:sieve:sect:commute}.
+
+When applying \RBCN\ to replicate such an auction service, we note that the concurrent execution
+under weak consistency of a {\tt placeBid} operation with a bid 
+that is higher than all accepted bids and a {\tt closeAuction} operation 
+can lead to the violation of the application invariant. 
+This happens because the generator of {\tt closeAuction} will ignore the highest bid created by 
+the concurrent shadow {\tt placeBid'}. Unfortunately, 
+the only way to address this issue in \RBCN\ is to label
+both shadow operations as strongly consistent (red), i.e.,
+all shadow operations of either type will be totally ordered w.r.t. each other, 
+which will incur in a high coordination overhead, while not taking advantage of the flexibility provided by \RBCN.
+Intuitively, however, there is no need to order pairs of {\tt placeBid'}, 
+since a bid coming before or after another does not affect the winner selection.
+This highlights that our previous coarse-grained operation classification into 
+two levels of consistency can be conservative, and some services could benefit
+from additional flexibility in terms of the level of coordination.
+
+In this chapter, to address the above issue, we present a principled
+methodology for allowing developers to tune tradeoffs between
+performance and consistency requirements. 
+In summary, we make the following three main contributions:
+\begin{enumerate}
+\item We generalize the principles
+behind the binary classification by breaking down
+the coarse-grained constraint that totally orders all strongly consistent operations
+into a set of fine-grained restrictions, each of which only imposes an order between 
+a pair of operations. Following this path, we propose a novel generic consistency definition, 
+{\it \PRCNF\ (or short, \PRCN)}, which takes a set of restrictions
+as input and forces these restrictions to be met in all partial orders. This creates the opportunity for defining many consistency 
+guarantees within a single replication framework by expressing consistency levels in terms of visibility 
+restrictions over operations. Weakening or strengthening the consistency semantics in the 
+context of \PRCN\ is achieved by imposing fewer or
+more restrictions over pairs of operations. 
+
+\item We design an analysis to identify, for every application, a set of
+restrictions over pairs of its operations so that state convergence and
+invariant preservation are ensured if these restrictions are enforced throughout all
+executions of the system. The fundamental challenge of doing this
+is that missing required restrictions will lead applications to diverge state or violate invariants, while
+placing unnecessary restrictions will lead to a performance penalty due to the additional coordination. To overcome
+this, this analysis aims to find a minimal set of restrictions. (By minimal
+we mean that removing a single restriction no longer ensures the desired properties.)
+
+\item We further observe that, given a set of restrictions across the visibility of operations, a 
+key aspect to ensure good performance in a replicated service is to enforce these restrictions in an
+efficient way. In fact, there exist several coordination techniques/protocols that can be used
+for enforcing a given restriction, such as Paxos, distributed locking, or global barriers. However, depending on the
+frequency over time in which the system receives operations confined by a restriction, 
+different coordination approaches lead to different performance tradeoffs. 
+Therefore, to minimize the runtime coordination overhead, we also propose
+an efficient coordination service that helps replicated services
+use the most efficient protocol by taking into account the deployment characteristics measured at runtime.
+\end{enumerate}
+
+We extended RUBiS to incorporate a closing auction functionality, determined how to best run it under \PRCN, replicated this web application with \coordtool, and compared against the results
+we obtained from the \RBCAJ\ version. The experiment results show that \PRCN\ requires fewer restrictions
+than \RBCN, and the usage of \PRCN\ and \coordtool\ offers a significantly better performance than the combination
+of \RBCN\ and \Gemini.

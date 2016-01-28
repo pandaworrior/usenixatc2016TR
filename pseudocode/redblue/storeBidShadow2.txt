@@ -1,0 +1,8 @@
+func shd_storeBid1($bidId$, $itemId$, $bid$, $qty$, $L\_TS$){
+   exec(INSERT ($bidId$, $itemId$, $qty$, $maxBid$, $L\_TS$));
+   $item \leftarrow$ scanning $itemId$ in database
+   IF $bid > item.maxBid$:
+      exec(UPDATE $item.max\_bid= bid$);
+   exec(UPDATE $item.nb\_of\_bids += 1$); 
+   exec(UPDATE $item.logic\_ts = L\_TS$ WHERE $item.l\_ts <= L\_TS$);
+}

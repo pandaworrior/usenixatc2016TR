@@ -1,0 +1,139 @@
+\subsection{State convergence}
+\label{sec:properties:converge}
+A PoR-consistent replicated system is state convergent if all its replicas reach
+the same final state when the system becomes quiescent, i.e., for any pair of causal legal serializations
+of any R-Order, $L_{1}$ and $L_{2}$, we have $S_0(L_1) = S_0(L_2)$, where $S_0$ is the valid initial state. We
+state the necessary and sufficient conditions to achieve this in the following theorem.
+
+%\begin{mydef}
+%\textbf{Convergence}: A system $\mathscr{S}$ starting from an initial state $S$ and with a set of restrictions $R$ is convergent if,
+%for any execution of $\mathscr{S}$ and its corresponding R-Order $O$, any two legal serializations of $O$, $L_{1}$ and $L_{2}$, are state convergent, i.e., $S(L_{1}) = S(L_{2})$.
+%\label{def:converge}
+%\end{mydef}
+
+%\cheng{Why we use the term legal serialization instead of causal legal serialization is because that the number of replicas can be dynamically changed.}
+
+\begin{theorem}
+\label{theorem:convergence}
+\emph{(Convergence Theorem)}
+A \PRCAJ\ system $\mathscr{S}$ with a set of restrictions $R$ is \textbf{convergent}, if and only if,
+for any pair of its shadow operations $u$ and $v$, $r(u, v) \in R$ if $u$ and $v$ don't commute.
+\end{theorem}
+
+In order to prove this theorem, we need the assistance from three lemmas introduced in Chapter~\ref{chapter:redblue}, namely,
+Lemmas~\ref{lem:canSwap}, ~\ref{lem:adjexists} and ~\ref{lem:adjacentconvergent}. The first lemma asserts that,                             
+given a legal serialization, swapping two adjacent
+shadow operations in this serialization that are not ordered by the R-Order
+results in another legal serialization. The second lemma asserts that given an R-Order and one of its legal serializations, if there exists
+a pair of shadow operations $u$ and $v$ that are not ordered by the R-Order, then there exists an adjacent
+pair of shadow operations between $u$ and $v$ in that serialization that are not ordered
+by the R-Order. The third lemma asserts that two legal serializations that differ
+in the order of exactly one pair of adjacent shadow operations are state
+convergent, if all blue operations are globally commutative. The first two lemmas remain valid under \PRCN\ since their proofs
+remain unchanged. However, we have to change the third lemma since \RBCN\ archieves state convergence by requiring
+all blue shadow operations to commute but \PRCN\ only needs any pair of unordered shadow operations
+to commute. We apply the following changes to Lemma~\ref{lem:adjacentconvergent},
+which results in a new lemma (Lemma~\ref{lem:poradjacentconvergent}).
+\if 0
+%\begin{lemma}\label{lem:canSwap}
+% Given a legal serialization $O_i=(U,<_i)$ of R-Order $O=(U,\prec)$
+% with shadow operations $u,v\in U$ such that $u<_iv$ and $u \not\prec v$ and
+% there exists no $s$ such that $u<_{i}s<_{i}v$, and let $P=\{ p | p \in U \wedge p <_i u\}$
+% and $Q=\{q | q \in U \wedge v <_i q\}$. The serialization $O_k=(U,<_k)$ where
+%   \begin{itemize}
+%     \item $\forall p,q\in P \cup Q: p<_kq
+%       \Longleftrightarrow p<_iq$,
+%   \item $\forall p \in P: p <_k v$,
+%   \item $v<_k u$,
+%   \item $\forall q \in Q: u <_k q$
+%  \end{itemize}
+%  is a legal serialization of $O$.
+%  \end{lemma}
+% \begin{lemma}\label{lem:adjexists}
+% Given a legal serialization $O_i=(U,<_i)$ of R-Order $O=(U,\prec)$, if
+% $\exists u,v\in U$ such that $u<_i v$ and $u\not\prec v$,
+% let $U' = \{u,v\} \cup \{q|u<_i q\wedge q<_i v\}$, then $\exists r, s \in U'$ such that $r<_i s \wedge$ $r\not\prec s$ $\wedge \not\exists p \in U': r<_i p\wedge p <_i s$.
+% \end{lemma}
+\fi
+
+\begin{lemma}\label{lem:poradjacentconvergent}
+Assume $O_i=(U,<_i)$ and $O_j=(U,<_j)$ are both legal
+serializations of R-Order $O=(U,\prec)$ that are identical except for
+two adjacent operations $u$ and $v$ such that $u<_iv$ and $v<_ju$ and that $u$ and $v$ commute. Then
+$S(O_i)=S(O_j)$.
+\end{lemma}
+
+The above lemma asserts that two legal serializations that differ
+in the order of exactly one pair of adjacent shadow operations are state 
+convergent, if the two operations commute. We introduce the proof 
+of Lemma~\ref{lem:poradjacentconvergent} as follows.
+
+\noindent{\bf Proof:} Let $P$ and $Q$ be the greatest common prefix and suffix
+of $O_i$ and $O_j$, respectively.  Further, let $S_P=S_0(P)$,
+$S_{uv}=S_P+u+v$, and $S_{vu}=S_P+v+u$. By the definition of operation commutativity,
+$S_{uv} = S_{vu}$. It then follows the definition
+of deterministic state machine that $S_{uv}(Q) = S_{vu}(Q)$. 
+By the definition of legal serialization (Definition~\ref{def:legalserial}),
+the final state reached by sequentially executing operations in $O_{i}$ 
+against $S_0$ according to $<$ is equal to the final state obtained by 
+sequentially applying operations in $Q$ against $S_{uv}$ according to $<$, namely $S_0(O_i)=S_{uv}(Q)$. By a
+similar argument, we know $S_0(O_j)=S_{vu}(Q)$. Finally, we have $S_0(O_i)=S_0(O_j)$.
+\qed
+
+After adapting these lemmas from Chapter~\ref{chapter:redblue} to \PRCN, we use
+them to construct the proof of the state convergence theorem (Theorem~\ref{theorem:convergence}) as follows:
+
+\noindent{\bf Proof:}
+($\Leftarrow$:) We first show that if for any pair of non-commuting operations of $\mathscr{S}$,
+a restriction between this pair of operations is in $R$, then the \PRCAJ\ system $\mathscr{S}$ is convergent. 
+To prove this, it is sufficient to show that any pair of legal serializations of their underlying R-Order $O$ 
+is state convergent. Let $O_{i}$ and $O_{j}$ be two legal serializations of $O$. Let $S$ be the initial state.
+There are two cases to consider:
+
+{\bf Case 1:} $O_i = O_j$.  The underlying deterministic state
+machine ensures that $S(O_i)=S(O_j)$.
+
+{\bf Case 2:} $O_i \neq O_j$, in which case $\exists u,v\in U$
+such that $u<_i v$ and $v<_j u$. Since both $O_i$ and $O_j$ are
+legal serializations of $O$, it follows that $u\not\prec v$ and
+$v\not\prec u$. It then follows from Lemma~\ref{lem:adjexists} that we
+can find an adjacent pair of operations $r, s$ in both $O_i$ and $O_j$ such
+that $r<_i s \wedge s<_j r \wedge r\not\prec s \wedge s\not\prec r$. 
+We construct a new serialization $O_{i+1}$ by duplicating $O_i$ but swapping the 
+order of $r$ and $s$ in $O_{i+1}$, i.e., $r<_i s \wedge s<_{i+1} r$. By Lemma~\ref{lem:canSwap}, 
+$O_{i+1}$ is also a legal serialization of $O$. It then follows from the hypothesis that $r$ and $s$
+commute and from Lemma~\ref{lem:adjacentconvergent} that $O_i$ and $O_{i+1}$ are convergent.
+
+If $O_{i+1} \neq O_j$, we continue the construction by finding
+an adjacent pair of operations whose order is different in $O_{i+1}$, $O_j$. By swapping
+the two operations, we obtain another legal serialization $O_{i+2}$. We can then continue to swap
+all such adjacent pairs until the last constructed serialization
+is equal to $O_j$. This is achievable since at every step the number of operation pairs in the corresponding newly constructed legal serialization 
+whose orders are different in $O_j$ decreases.
+At the end, the construction process results in a chain of legal
+serializations where the first one is $O_i$ and the last is $O_j$, and any consecutive pair of legal serializations
+is identical except for the order of an adjacent pair of elements. It then follows
+Lemma~\ref{lem:adjacentconvergent} that every consecutive pair of
+serializations in the chain is state convergent, thus $S_0(O_i) = S_0(O_j)$.
+
+
+\noindent ($\Rightarrow$:) (Proof by Contradiction.) We show that if a \PRCAJ\ system $\mathscr{S}$ 
+with a restriction set $R$ is convergent, then for any pair of non-commuting shadow operations, there must exist
+a restriction confining the two operations in $R$. Since $\mathscr{S}$ is convergent, we know that for any R-Order of $\mathscr{S}$, any pair of legal serializations of that R-Order are convergent. We assume by contradiction that there exist two
+shadow operations $u, v$ such that they don't commute and $r(u, v) \not\in R$. By the definition of commutativity, there exists
+a state $S$ such that $S+u+v \neq S+v+u$. We can find a state $S_0$ and a legal serialization of $\mathscr{S}$, $O_1(P, <)$, such that $S_0(P) = S$. Then,
+we can construct a R-Order $O(U, \prec)$, where 
+
+\begin{itemize}
+\item $U = P\cup\{u, v\}$;
+\item for any pair of operations in $P$, $m$ and $n$, $m<n \Longleftrightarrow m\prec n$;
+\item for any operation $m$ in $P$, $m \prec u$ and $m \prec v$.
+\end{itemize}  
+
+$u, v$ are the maximal elements of $O$. It follows from the definition of causal legal serialization (Definition~\ref{def:causalserial}) that
+we can construct two legal serializations $L_1$ and $L_2$ of $O$ such that $L_1 = P + u + v$ and $L_2 = P + v + u$. 
+As $S_0(L_1) = S_0(P + u +v)$, $S_0(L_1) = S_0(P) + u +v$. It follows from $S_0(P) = S$ that $S_0(L_1) = S+u+v$. By a similar argument, $S_0(L_2) = S+v+u$.
+It then follows from $S+u+v \neq S+v+u$ that $S_0(L_1)\neq S_0(L_2)$. As $L_1$ and $L_2$ are not convergent, $\mathscr{S}$ is not convergent. Contradiction is
+found.
+\qed
+

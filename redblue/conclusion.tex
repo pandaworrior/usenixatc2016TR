@@ -1,0 +1,63 @@
+\section{Limitations and future work}
+\label{ch:redblue:sect:limitation}
+Although \RBc\ significantly succeeded at making our example applications fast, i.e.,
+uniformly low user observed latency and high system throughput, without sacrificing
+their targeted behavior, 
+there are still several points, which we address in subsequent chapters.
+
+First, \RBc\ offers a coarse-grained classification scheme, which can
+lead to a conservative labeling result for applications that require
+more consistency levels other than weak and strong consistency. We address this limitation by introducing
+a generic consistency model providing us with more flexibility to express consistency requirements in Chapter~\ref{chapter:por}.
+
+Second, the adoption of \RBc\ requires programmers to make effort to write shadow operations,
+to apply changes to the original code,
+and to reason about operation commutativity and invariant violation in
+the presence of parallelism. Without the support of automatic tools, the 
+manual work can be error-prone and does not scale, as
+the code base increases. We address
+this limitation by building SIEVE in Chapter~\ref{chapter:sieve},
+which combines operational transformation and programming language techniques
+to provide an automatic and provably correct solution.
+
+Third, the simple token passing scheme for offering
+strong consistency is not efficient and fault tolerant. At each point of time,
+only one site can admit its \red\ \shadow\ \operations\ to the global
+redblue order when this site is possessing
+the \red\ token, while the remaining sites are waiting. This leads to a high latency
+for user requests, and would cause the whole system to stop
+executing this type of operations if the site where the red token stays crashes.
+To address this limitation, we leave as future work
+the implementation of Paxos for serializing all \red\ \shadow\ \operations\ across sites.
+
+Fourth, using logical clocks might introduce false causal dependencies among
+operations. As every site increases its own entry when assigning monotonic
+timestamps to all its receiving operations, these operations become totally ordered, which,
+provided that some of them are \blue, is not necessary. This might limit the 
+amount of concurrency within a site, so we leave to future work
+an analysis of the impact of the usage of logical clock on scalability.
+%Despite the fact we believe that we have identified all
+%relevant invariants in an easy way, we highlight that we could use
+%tools for automatically inferring invariants to aid in this process
+%~\cite{ErnstPGMPTX2007}.
+
+\section{Summary}%\pagelimit{0.25}}
+\label{ch:redblue:sect:conclusion}
+In this chapter, we presented a principled approach to building
+geo-replicated systems that are fast as possible and consistent when needed.
+Our approach to addressing the
+tension between running operations locally as often as possible
+but without sacrificing important application properties, namely state
+convergence and invariant preservation, hinges on
+three major technical contributions:
+1) a novel notion of \RBc\ allowing
+both stron\-gly consistent (\red) \operations\ and causally consistent (\blue)
+\operations\ to coexist, 2) a concept of \shadow\ \operation\ increasing the
+coverage of \blue\ operations, and 3) a labeling methodology for
+precisely determining which operations to be assigned which consistency level.
+We implemented a distributed storage system called \gemini\ that 
+execute and replicate \red\ and \blue\ \operations , and used it along with our labeling
+conditions to run three existing web applications, namely TPC-W, RUBiS and Quoddy, under \RBCN.
+Experimental results show that \RBc\ significantly improves the performance of geo-replicated
+systems.
+

@@ -1,0 +1,12 @@
+\section{System models}
+\changebars{We assume a distributed system with state fully replicated across
+$k$ sites denoted $\textit{site}_0\ldots \textit{site}_{k-1}$. Each site
+hosts a replica, and each replica behaves a deterministic state machine model. Any
+service running on the top of that replicated system defines a set of
+desirable target properties, in order to deliver a meaningful and good user experience. 
+The most representative and important properties are three pillars: a) {\bf Causality}---the
+service ensures the monotonicity of user requests within a session and preserving causal dependencies
+across clients; b) {\bf State convergence}---all replicas that have executed the same set of operations are
+in the same state; c) {\bf Invariant preservation}---the behavior of the system
+must obey its specification, which may be defined as a set of invariants that must
+be preserved, e.g., that no two users receive the same user id when registering.}{}

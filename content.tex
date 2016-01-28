@@ -1,0 +1,79 @@
+\chapter{Coexistence of strong and weak consistency}
+\label{chapter:redblue}
+In this chapter, we present \RBCN, a novel consistency definition, which allows us to strike
+a balance between performance and targeted consistency semantics when building
+replicated services, and the design, implementation and evaluation of \gemini,
+a geo-distributed storage system enabling \RBCAJ\ replication.
+
+This chapter is organized as follows. We first motivate the need for defining
+\RBCN\ and briefly describe the major contributions of this work in Section~\ref{ch:redblue:sect:motiv}. Then, 
+we position our work in comparison to existing proposals and present the list of targeted end-to-end
+system properties in Section~\ref{ch:redblue:sect:related}.
+We define \RBCN\ and sketch the proofs of ensuring end-to-end properties in Section~\ref{ch:redblue:sect:redblue}. 
+In Section~\ref{ch:redblue:sect:shadowops}, we introduce the concept of \shadow\ \operations\ along with a set of
+principles for how to use this concept under \RBCN. We describe our prototype system
+\gemini\ in Section~\ref{ch:redblue:sect:gemini}, and report on the experience
+transitioning three application benchmarks to be \RBCAJ\ in
+Section~\ref{ch:redblue:sect:casestudies}. We analyze experimental results in
+Section~\ref{ch:redblue:sect:eval}. Limitations are discussed in
+Section~\ref{ch:redblue:sect:limitation} and we conclude the work in Section~\ref{ch:redblue:sect:conclusion}.
+
+\input{./redblue/intro}
+\input{./redblue/related}
+\input{./redblue/redbluedef}
+\input{./redblue/shadowops}
+\input{./redblue/architecture}
+\input{./redblue/casestudies}
+\input{./redblue/eval}
+\input{./redblue/conclusion}
+
+\chapter{Automatic consistency level assignment}
+\label{chapter:sieve}
+In this chapter, we describe the design, implementation and evaluation of \tool, the first tool to automate
+the choice of consistency levels in a replicated system. \tool\ performs a combination of static and
+dynamic analysis, offline and at runtime, to determine
+when it is necessary to use strong consistency to preserve
+these invariants and when it is safe to use causally consistent
+commutative replicated data types (CRDTs).
+
+This chapter is organized as follows. We first outline the motivation and contributions of \tool\ in Section~\ref{ch:sieve:sect:motivation}. Then
+we discuss the most relevant related work in Section~\ref{ch:sieve:sect:related}. We present the design rationale of \tool,
+and detail its implementation in Sections~\ref{ch:sieve:sect:overview},~\ref{ch:sieve:sect:commute},~\ref{ch:sieve:sec:label}. 
+Section~\ref{ch:sieve:sect:evaluation} describes the case study applications, the experience on applying \tool\ to these applications, and the corresponding 
+experimental results. Finally, we discuss \tool's limitations in Section~\ref{ch:sieve:sect:limitation} 
+and conclude this chapter in Section~\ref{ch:sieve:sect:conclude}.
+
+\input{./sieve/intro}
+\input{./sieve/related}
+%\input{./sieve/preliminary}%no need since it is covered by the RedBlue chapter
+\input{./sieve/overview2}
+\input{./sieve/commutative}
+\input{./sieve/invariant-camera-ready}
+\input{./sieve/evaluation}
+\input{./sieve/conclusion}
+
+\chapter{Minimizing coordination in replicated systems}
+\label{chapter:por}
+
+In this chapter, we present a novel consistency definition, \PRCNF\ (or short, PoR consistency), generalizing
+the tradeoff between performance and the amount of coordination paid to restrict the ordering of certain
+operations behind \RBCN. We also describe the design, implementation and evaluation of \coordtool, which
+is an efficient coordination service for PoR consistency.
+
+This chapter is organized as follows. We describe the motivation and contributions of this chapter
+in Section~\ref{ch:por:sect:intro}. Then we discuss the most relevant work in Section~\ref{ch:por:sect:related}. 
+We introduce the definition of \PRCN\ in Section~\ref{ch:por:sect:pordef},
+and a set of principles to infer restrictions in Section~\ref{ch:por:sect:infer}.
+We describe an efficient coordination service called \coordtool\ in Section~\ref{ch:por:sect:coord}. 
+In section~\ref{ch:por:sect:eval}, we analyze the experimental results from replicating
+an extended version of RUBiS under PoR consistency through \coordtool. 
+Finally, some limitations of our work are discussed in Section~\ref{ch:por:sect:limit} 
+and we conclude the chapter in Section~\ref{ch:por:sect:conclude}.
+
+\input{./por/intro}
+\input{./por/related}
+\input{./por/porconsistency}
+\input{./por/inference}
+\input{./por/implement}
+\input{./por/eval}
+\input{./por/conclude}

@@ -1,0 +1,8 @@
+Begin transaction;
+for(int i = 0; i < x.length; i++){
+  if(x[i] < 100)
+    x[i]++;
+  else
+    x[i] = -100            
+}
+End transaction;

@@ -1,0 +1,9 @@
+shd_confirmFriend($currentUser$, $newFriend$,$addTime$,$friendRequest$,$L\_TS$){
+   exec(UPDATE $currentUser.friendCollection.time = addTime$ WHERE $currentUser.l\_ts <= L\_TS$);
+   exec(UPDATE $newFriend.friendCollection.time = addTime$ WHERE $newFriend.l\_ts <= L\_TS$);
+   $friendRequest \leftarrow$ scanning friendRequest table by $currentUser.id$ and $newFriend.id$;
+   if $friendRequest$ not NULL:
+      exec(INSERT ($currentFriend.friendCollection.id$, $newFriend.id$, $L\_TS$));
+      exec(INSERT ($newFriend.friendCollection.id$,$currentFriend.id$, $L\_TS$));
+      exec(DELETE $friendRequest$);
+}

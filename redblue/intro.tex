@@ -1,0 +1,77 @@
+\section{Motivation and contributions}
+\label{ch:redblue:sect:motiv}
+As we mentioned in Chapter~\ref{chapter:intro}, scaling services over the Internet to meet the needs of an
+ever-growing user base is challenging. In particular, in order to improve
+user-perceived latency, which directly affects the quality of the user
+experience, services replicate system state across geographically
+diverse sites and direct users to the closest or least loaded site.
+
+
+To avoid paying the performance penalty of synchronizing concurrent
+actions across data centers, some systems, such as Amazon's
+Dynamo~\cite{Decandia2007Dynamo}, resort to weaker consistency semantics
+like eventual consistency where state can temporarily diverge.
+Others, such as Yahoo!'s PNUTS~\cite{Cooper2008PNUTS}, avoid state
+divergence due to the undesirable sets of behaviors it allows, by
+requiring all \operations\ that update the service state to be
+funneled through a primary site and thus incurring increased latency.
+
+In order to address the inherent tension between improving performance and
+maintaining meaningful consistency semantics, several approaches have been recently proposals 
+for allowing multiple
+  levels of consistency to
+  coexist~\cite{Ladin1992LazyReplication,Sovran2011PSI,Singh2009Zeno}: some
+  \operations\ can be executed optimistically, without synchronizing
+  with concurrent actions at other sites, while others require a
+  stronger consistency level and thus require cross-site
+  synchronization. However, this places a high burden on the developer
+  of the service, who must decide which \operations\ to assign which
+  consistency levels. It is challenging to make such decisions since it requires reasoning about the consistency
+  semantics of the overall system to ensure that the behaviors
+  that are allowed by the different consistency levels satisfy the specification
+  of the system.
+
+
+In this chapter we present a comprehensive and principled approach to
+this problem, aiming at enabling geo-replicated systems to be as fast
+as possible, while ensuring that they are consistent when necessary. We make the following three contributions:
+\begin{enumerate}
+\item 
+We propose a novel consistency definition called \RBc. The intuition
+behind \RBc\ is that \blue\ operations execute locally and are lazily
+replicated in an eventually consistent manner~\cite{Decandia2007Dynamo,Lloyd2011Causal,Terry1995Managing,
+Mahajan2010Depot,Feldman2010Sporc,Shapiro2011Conflict,Singh2009Zeno}.\ \Red\ \operations, in contrast, are serialized with respect to each
+other and require immediate cross-site coordination. In addition,
+\RBc\ preserves
+causality by ensuring that dependencies established when an
+\operation\ is  invoked at its primary site are preserved as
+the \operation\ is incorporated at other sites.
+
+\item We identify the sufficient conditions under which \operations\ must be
+  colored \red\ and may be colored \blue\ in order to ensure that
+  application invariants are never violated and that all replicas
+  converge on the same final state.  Intuitively, \operations\ that
+  commute with all other \operations\ and do not impact invariants may
+  be \blue; the remaining ones must be \red.
+
+%an \operation\ may be \blue\ if it commutes with all other
+%\operations\ and does not impact any invariants.
+
+\item We observe that the commutativity requirement limits the space
+  of potentially \blue\ \operations, provided that many \operations\ in real world applications
+do not commute w.r.t each other. To address this limitation, we decompose \operations\ into two
+  components: (1) a \initial\ \operation\ that identifies the changes
+  the original \operation\ should make, but has no side effects
+  itself, and (2) a \shadow\ \operation\ that performs the identified
+  changes and is replicated to all sites. With this decomposition, only
+  \shadow\ \operations\ are colored \red\ or \blue. This allows for a
+  dynamic runtime classification of \operations\ and hence broadens the space
+  of potentially \blue\ \operations.
+\end{enumerate}
+
+We built a system called \gemini\ that coordinates
+\RedBlue\ replication, and use it to extend three applications to be
+\RBct: the TPC-W and RUBiS benchmarks and the Quoddy social network.  Our evaluation using microbenchmarks and the three
+applications shows that \RBc\ provides substantial latency and
+throughput benefits.
+

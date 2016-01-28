@@ -1,0 +1,228 @@
+\chapter{Introduction}
+\label{chapter:intro}
+
+\section{The unprecedented popularity of Internet services}
+In the last decade, Internet services, such as web search, email, collaborative 
+editing, e-commerce and social networking, have become
+increasingly popular at an unprecedented speed. Nowadays, at any point of time, a massive number 
+of subscribers are interacting with these services. For instance, an annual 
+report~\cite{FB2013AnnualReport} shows that Facebook had on 
+average 757 million daily active users worldwide in December 2013, which is 22\% 
+larger than the number measured a year ago.  In December 2012, 
+Google~\cite{GoogleWeb} received 114.7 billion monthly searches, while 
+Bing~\cite{bing} got 4.5 billion~\cite{Sullivan2013Search}. Likewise, 
+Amazon~\cite{AmazonWeb}, a leading worldwide e-commerce retailer
+company, reported that their number of active customers per year has been 
+remarkably increasing since 1997 and
+reached 270 million in 2014~\cite{AmazonEcommerceStat}.
+
+The direct implication of this trend is that the scalability of these services 
+must withstand the tremendous scale of requests issued by users all over the 
+world.  In 2010, over one million images per second are served by Facebook when 
+the peak load arrives~\cite{Beaver2010Needle}. In May 2013, Google reported that 
+the High Replication Datastore integrated with Google App Engine was able to 
+process over 4.5 trillion transactions per 
+month~\cite{Google2014CloudDataStore}. Another important property in addition to 
+high throughput that these services must offer is low latency access, since the 
+amount of time a user spent waiting for responses has a strong negative impact 
+on
+their subsequent behavior~\cite{WebPerformance, GoogleABTest, 
+Schurman2009latency}. In a recent study~\cite{Schurman2009latency} conducted at 
+Microsoft, engineers measured the impact of delaying the reply to user requests, 
+and discovered that high latency caused a strong negative
+impact on user activities and revenue per user. For instance, 4.4\% fewer users performed clicks
+and the revenue per user decreased by 4.3\% when the delay reaches 2 
+seconds. Incidentally, Google made a very
+similar experiment and obtained consistent results~\cite{Schurman2009latency}. For example, the
+average number of daily searches per user dropped with an increasing delay, namely by 0.59\% when
+a 400-ms delay was artificially added.
+
+\section{The case for (Geo-)Replication}
+In order to achieve high service throughput and to offer fast responses to 
+users, the providers of Internet services, such as Google~\cite{GoogleWeb}, 
+Microsoft~\cite{MicrosoftWeb}, Amazon~\cite{AmazonWeb} and 
+Facebook~\cite{FacebookWeb}, replicate their user state across replicas within a 
+single data center or across multiple data centers that are either at the
+same location or geographically scattered over continents. User requests then 
+are forwarded
+to a nearby or the least loaded replica. A few representative systems that provide 
+replication facilities are as follows. (1) Engineers at Facebook designed TAO, a 
+geographically distributed system, to store user data across data centers and 
+geographic regions~\cite{Bronson2013TAO}. They claimed that read
+latency in TAO is independent of inter-region latency, which is often a few 
+orders of magnitude higher than the intra-region or intra-data center latency. 
+(2) Most Google applications satisfy their interactivity demand through adopting 
+geo-distributed data stores like Spanner~\cite{Corbett2012Spanner}, 
+Megastore~\cite{Baker2011Megastore} and Mesa~\cite{Gupta2014Mesa}. (3) Pileus~\cite{Terry2013SLA} at Microsoft 
+is a replicated key-value store that allows applications to express different 
+latency requirements by specifying which set of servers to contact for executing 
+operations.
+
+\section{Fundamental tradeoff: consistency v. performance}
+While replicating user data, some form of synchronization is required
+to bring all copies up-to-date. The timing of this synchronization reflects
+the inherent tension between performance and the desired consistency 
+semantics.
+On the one hand, to avoid paying the performance cost of coordinating concurrent 
+user requests
+across replicas, some systems, such as Amazon's 
+Dynamo~\cite{Decandia2007Dynamo}, resort
+to weaker consistency semantics like eventual 
+consistency~\cite{Burckhardt2013Eventual, Saito2005Optimistic}, under which only 
+a small number of replicas will be contacted to produce a user response event, 
+and later, in the background, the corresponding side effects are lazily 
+replicated across all other replicas. This technique is favored by
+latency-sensitive services, such as instant messanger, social networking and 
+online shopping, since it offers low latency access by eliminating immediate 
+coordination.
+The downside, however, is that it introduces difficulties for programming 
+applications, as it offers semantics differing from the natural semantics 
+specified by Linearizability~\cite{Herlihy1990Linearizability},
+where a replicated service involving multiple machines behaves as a single 
+centralized server. In particular, weak consistency semantics require 
+programmers to make an effort to reason about the correctness of
+their implementation and to handle unexpected behaviors, such as invariant 
+violations or divergence.
+
+On the other hand, to avoid the above difficulties, some systems like 
+Spanner~\cite{Corbett2012Spanner} choose
+strong consistency~\cite{Herlihy1990Linearizability}, where coordination among 
+replicas is required for them to agree on the order in which user requests are 
+executed. This coordination, however, incurs in high latency, and the penalty 
+will be amplified
+in geo-replication scenarios as the communication cost across world regions is 
+two or three orders of magnitude larger than the one measured within a data 
+center~\cite{Li2012RedBlue, Terry2013SLA}.
+
+\section{Challenges for being fast}
+To scale out the Internet services to meet their ever-growing user base, many 
+recent storage systems have been proposed to replicate operations following a 
+hybrid consistency model, where some operations can be executed
+optimistically at a replica without being coordinated with concurrent actions at 
+other replicas, while others
+require a stronger consistency level and thus require cross-replica 
+coordination~\cite{Ladin1992LazyReplication, Singh2009Zeno,Li2012RedBlue, 
+Terry2013SLA,Singh2009Zeno}. Although these proposals have 
+validated that associating operations with different consistency levels is a 
+promising solution for building highly scalable Internet services, there are still a few challenges impeding their adoption in 
+practice. The target of my thesis is to explore reasonable solutions to mitigate 
+these fundamental issues.
+
+First, \textbf{how to find conditions that guide the use of weak 
+consistency in multi-level consistency schemes?} Weakly
+consistent operations are (dramatically) faster than strongly consistent ones, since
+fewer (geo-distributed) replicas need to be contacted.
+However, we cannot arbitrarily label operations weakly consistent, since an 
+over-optimistic labeling plan might break the desired application-specific 
+properties, e.g., two concurrent withdrawals without coordination potentially 
+drive a shared bank balance below zero. Therefore, to safely use weak 
+consistency, we must extract a set of sufficient conditions to guide the classification. 
+In addition, the degree of performance improvement highly relies on the ratio of 
+weakly consistent operations to the strongly consistent ones in a replicated service. In some 
+applications, we observed that not many operations could accept weak 
+consistency. To address this limitation, we need to find a way to increase the 
+space of weakly consistent operations.
+
+Second, \textbf{can we provide tools that automate the above 
+decision process?} The problem
+ with hybrid consistency solutions~\cite{Ladin1992LazyReplication, 
+Singh2009Zeno,Li2012RedBlue, Terry2013SLA} is two-fold: a) they impose on the 
+application
+ programmer the non-trivial burden of understanding the semantics of operations
+ and the influence between operations associated with different consistency 
+levels even if guided by sufficient conditions from addressing
+the previous point~\cite{Li2012RedBlue}; and 
+b) in order to handle conflicts, they
+ require programmers manually to adopt a new programming model to write their 
+services from scratch, or to patch their services with newly implemented merge 
+procedures. In summary, automation is required to make the 
+hybrid consistency model easy-of-use.
+
+Third, \textbf{can we maximize performance by having a generic way to express
+various consistency requirements and leveraging this to minimize
+the amount of required coordination?} We observe that
+in some systems, in order to avoid an 
+undesirable system behavior (e.g., state divergence or invariant violation), 
+the adoption of multi-level consistency models (e.g., RedBlue consistency)
+introduces unnecessary coordination. This is because an operation not accepting
+weak consistency semantics only has to be coordinated w.r.t a particular group of
+operations, instead of all operations requiring stronger consistency semantics. Unfortunately,
+however, multi-level consistency models often do not allow us to have 
+such a fine-grained tuning in consistency requirements, and hence they do not always guarantees 
+that the amount of coordination imposed for a replicated service atop of them is minimal. To
+address this limitation, we need to find a generic consistency definition, which
+provides programmers with flexibility to express various fine-grained consistency semantics in a single
+framework
+
+\section{Thesis contributions}
+In this thesis, we aimed to provide right answers to the above three questions. At 
+a high level, we made
+the following contributions:
+\begin{itemize}
+\item We proposed a novel consistency definition called 
+\RBCN~\cite{Li2012RedBlue}, which allows
+ operations to run under either weak or strong consistency. We also extracted a 
+set of
+ principles to guide programmers to make the decision of associating operations 
+with different
+ consistency levels. In essence, we only label operations as strongly consistent 
+if they are not commuting with
+ all other operations or they might potentially break invariants, and the 
+remaining operations are
+ weakly consistent. In addition to the classification methodology, we realize 
+that the performance
+ benefits only become visible if weakly consistent operations dominate the 
+operation space. However, given
+ the fact that the vast majority operations in the examples we studied do not
+commute, we will end up labeling
+ more operations strongly consistent. To address this limitation, we further 
+proposed a concept called shadow operation,
+ which helps replicate operations in a commutative manner regardless of when and 
+where the replication takes place. 
+\item  We designed an automatic tool, SIEVE~\cite{Li2014SIEVE}, to free 
+programmers
+ from the time-consuming and possibly error-prone tasks of manually choosing 
+appropriate consistency levels for various operations, while requiring a minimal amount of 
+programmer input. To achieve this,
+ SIEVE first leverages Commutative Replicated Data Types 
+(CRDTs)~\cite{Letia2009CRDTs} to
+ automatically create commutative shadow operations, by only requiring a small 
+amount of annotations from
+ programmers to specify which CRDT to be used. Using CRDTs, the remaining challenge to 
+assign consistency levels
+ is how to efficiently check whether a generated shadow operation will 
+potentially break programmer-specified invariants under weakly consistent 
+replication. To overcome this, SIEVE uses both static analysis and 
+runtime verification,
+ and accomplishes most of work the offline, to offer a low-cost dynamic consistency 
+level assignment.
+ \item To enable a flexible way to express fine-grained consistency requirements, 
+we proposed a generic consistency definition, \PRCNF(or short, \PRCN), which is not only able to 
+express several existing consistency levels i an uniform fashion, but is also 
+able to express more levels~\cite{Li2015PoR} not covered in multi-level consistency models. Basically, \PRCN\ captures 
+consistency levels in terms of visibility restrictions over pairs of operations in a 
+partial order. Weakening or strengthening consistency semantics in the context 
+of \PRCN\ is to remove or add restrictions over pairs of relevant operations. To 
+demonstrate the benefits of adopting \PRCN,  we designed and implemented an 
+efficient coordination service, which executes operations complying with 
+pre-defined restrictions among operations of a replicated service and is able to further reduce 
+the cost of coordination by profiling and analyzing the runtime operation 
+frequencies.
+\end{itemize}
+
+\section{Thesis organization}
+
+In summary, the primary goal of my thesis is to help programmers make their 
+replicated services
+as fast as possible and pay the coordination cost only when needed. The rest of 
+the proposal is organized as follows:
+\begin{itemize}
+\item Chapter~\ref{chapter:sysmodel} presents the system model.
+\item Chapter~\ref{chapter:redblue} presents the formalization of \RBCN, and the design,
+implementation and evaluation of \Gemini, a geo-distributed data store supporting \RBCN.
+\item Chapter~\ref{chapter:sieve} presents the design, implementation and evaluation of \tool, a tool for automatically
+assigning correct consistency levels to various operations.
+\item Chapter~\ref{chapter:por} presents the formalization of \PRCN,
+and the design, implementation and evaluation of \coordtool, an efficient coordination service replicating operations by following rules defined in \PRCN. 
+\item Finally, Chapter~\ref{chapter:conclude} concludes my thesis.
+\end{itemize}

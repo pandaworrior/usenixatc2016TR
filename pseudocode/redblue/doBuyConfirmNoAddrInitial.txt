@@ -1,0 +1,18 @@
+doBuyConfirm($cartId$){
+   beginTxn();
+   $cart \leftarrow$ scanning $cartId$ in database
+   $cost \leftarrow $ computeCost($cart$);//locally compute the cost
+   $orderId \leftarrow$ getUniqueId();
+   exec(INSERT ($orderId$,$cart.item.id$,$cart.item.qty$,$cost$));
+   $item \leftarrow$ scanning $cart.item.id$ in database
+   IF $item.stock - cart.item.qty$ < 10://replenishing stock
+      $delta \leftarrow item.stock-cart.item.qty+21$; 
+      exec(UPDATE SET $item.stock += delta$);
+   ELSE exec(UPDATE SET $item.stock -= cart.item.qty$);
+   exec(DELETE $cart.item$);
+   $L\_TS \leftarrow$ getCommitOrder();
+   if replenished:
+      commit(doBuyConfirmIncre',$orderId$,$cartId$,$cart.item.id$,$cart.item.qty$,$cost$,$delta$,$L\_TS$);
+   else:
+      commit(doBuyConfirmDecre',$orderId$,$cartId$,$cart.item.Id$,$cart.item.qty$,$cost$,$L\_TS$);
+}

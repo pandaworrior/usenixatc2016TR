@@ -1,0 +1,1 @@
+func shd_storeBidNOOP(){//do nothing}

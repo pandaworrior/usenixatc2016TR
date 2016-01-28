@@ -1,0 +1,87 @@
+%all macros definitions go here
+\newtheorem{mydef}{Definition}
+\newtheorem{axiom}{Axiom}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proof}{Proof}
+\newtheorem{lemm}{Lemma}
+\newtheorem{lemma}{Lemma}
+\newcommand\NI[1]{\mathrm{#1}} % not italic
+
+\newcommand{\POCN}{PO consistency} % N is noun
+\newcommand{\POCAJ}{PO-consistent} % AJ is abjective
+
+\newcommand{\PRCN}{PoR consistency}
+\newcommand{\PRCAJ}{PoR-consistent} 
+\newcommand{\PRCNF}{Partial Order-Restrictions consistency}
+
+\newcommand{\RBCN}{RedBlue consistency} 
+\newcommand{\RBCAJ}{RedBlue-consistent}
+
+\newcommand{\qed}{\hfill \mbox{\raggedright \rule{.07in}{.1in}}}
+\newcommand{\tool}{SIEVE}
+\newcommand{\coordtool}{Olisipo}
+
+
+%all for redblue, maybe some of them can be removed
+\newcommand{\operation}{\transaction}
+\newcommand{\Operation}{\Transaction}
+\newcommand{\operations}{\transactions}
+\newcommand{\Operations}{\Transactions}
+\newcommand{\transaction}{op\-er\-a\-tion}%transaction}
+\newcommand{\Transaction}{Op\-er\-a\-tion}%Transaction}
+\newcommand{\transactions}{op\-er\-a\-tions}%transactions}
+\newcommand{\Transactions}{Op\-er\-a\-tions}%Transactions}
+
+%%datacenter or site
+\newcommand{\dc}{site}
+\newcommand{\dcs}{sites}
+
+\newcommand{\shadow}{shadow}
+\newcommand{\Shadow}{Shadow}
+\newcommand{\initial}{generator}
+\newcommand{\Initial}{Generator}
+
+%%%%%% consistency
+\newcommand{\connector}{}%'n'}
+\newcommand{\redblue}{\red\connector\blue}%{\red\connector\blue}
+\newcommand{\RedBlue}{\Red\connector\Blue}%{\Red\connector\Blue}
+\newcommand{\rbc}{\redblue\ con\-sis\-ten\-cy}
+\newcommand{\RBC}{\RedBlue\ Con\-sis\-ten\-cy}
+\newcommand{\RBc}{\RedBlue\ con\-sis\-ten\-cy}
+\newcommand{\RBct}{\RedBlue\ con\-sis\-tent}
+\newcommand{\Rbc}{\RBc}
+\newcommand{\RBo}{\RedBlue\ order}
+\newcommand{\RB}{\RedBlue}
+\newcommand{\rbo}{\redblue\ order}
+
+%%%%% various system names
+\newcommand{\gemini}{Gemini}
+\newcommand{\Gemini}{Gemini}
+
+
+%%%%%% system components
+\newcommand{\plib}{PLib}
+\newcommand{\webproxy}{APX}
+\newcommand{\coordinator}{COOR}
+\newcommand{\storage}{DB}
+\newcommand{\datawriter}{DWR}
+\newcommand{\sandbox}{sandbox}
+
+%%%%%%%components defined by cheng
+\newcommand{\user}{user}
+\newcommand{\scratchpad}{scratchpad}
+
+%%%%%% colors
+\newcommand{\blue}{{blue}}
+\newcommand{\red}{{red}}
+\newcommand{\Blue}{{Blue}}
+\newcommand{\Red}{{Red}}
+\newcommand{\RED}{{RED}}
+\newcommand{\BLUE}{{BLUE}}
+\newcommand{\R}{R}
+\newcommand{\B}{B}
+\newcommand{\purple}{\textcolor{green}{purple}}
+\newcommand{\Purple}{\textcolor{green}{Purple}}
+
+\newcommand{\site}[1]{\ensuremath{\textit{site}(v)}}
+

@@ -1,0 +1,6 @@
+CREATE TABLE exampleTable (
+  objId INT(11) NOT NULL,
+  objCount INT(11) default 0,
+  objName char(60) default NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB

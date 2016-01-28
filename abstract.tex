@@ -1,0 +1,64 @@
+
+\vspace*{\stretch{1}}
+\section*{Abstract}
+
+Distributing data across replicas within a data center or across multiple data centers
+plays an important role in building Internet-scale services that provide
+good user experience, namely low latency access and high throughput. This approach
+often compromises on strong consistency semantics, which help maintain
+application-specific desired properties, namely, state convergence and invariant preservation. 
+To relieve such inherent tension, in the past few years, many proposals have been
+designed to allow programmers to selectively weaken consistency levels of
+certain operations to avoid costly immediate coordination for concurrent user requests. However,
+these fail to provide principles to guide programmers to make a correct decision
+of assigning consistency levels to various operations so that
+good performance is extracted while the system behavior still complies with its specification.
+% Others leave a non-trivial
+%burden on programmers of changing or designing their services to adopt
+%a specific consistency model.}
+
+The primary goal of my work is to provide programmers with principles and tools for building
+fast and consistent systems by allowing programmers
+to think about various consistency levels in the same framework. The first step we
+took was to propose \RBCN, which presents sufficient
+conditions that allow programmers to safely separate weakly consistent operations from
+strongly consistent ones in a coarse-grained manner. Second, to improve the practicality of \RBCN,
+we built SIEVE - a tool that explores
+both Commutative Replicated Data Types and program analysis techniques to assign proper consistency levels
+to different operations and to maximize the weakly consistent operation space.
+Finally, we generalized the tradeoff  between consistency and performance and proposed \PRCNF\ (or short, \PRCN) - a generic
+consistency definition that captures various consistency levels in terms of visibility restrictions
+among pairs of operations and allows programmers to tune the restrictions to obtain a fine-grained control of
+their targeted consistency semantics.
+
+
+\vspace*{\stretch{1}}
+
+\cleardoublepage
+\vspace*{\stretch{1}}
+\section*{Kurzdarstellung}
+Daten auf mehrere Repliken in einem Datenzentrum oder 
+{\" u}ber mehrere Datenzentren zu verteilen, nimmt einen hohen Stellenwert ein, um 
+Internet-weite Services mit guter Nutzererfahrung, insbesondere mit niedrigen 
+Zugriffszeiten und hohem Datendurchsatz, zu implementieren. Diese Methode beeintr{\"a}chtigt in der 
+Regel die starke Konsitenzsemantik, die hilft gew{\"u}nschte anwendungsspezifische Eigenschaften, die 
+Zustandskonvergenz und Erhaltung von Invarianten, aufrechtzuerhalten. Um diesen Kompromiss zu mildern, 
+wurde in den letzten Jahren mehrere Vorschl{\"a}ge entworfen, die es dem Programmierer erm{\"o}glichen f{\"ur} 
+einzelne Operationen ein schw{\"a}cheres Konsitenzlevel auszuw{\"a}hlen, um der aufwendigen Koordination paralleler 
+Benutzeranfragen zu entgehen. Allerdings liefern diese Leits{\"a}tze f{\"u}r die Programmierer keine L{\"o}sungsans{\"a}tze, wann 
+welches Konsistenzlevel f{\"u}r eine Operation anzuwenden ist, so dass die h{\"o}chstm{\"o}gliche Leistung erreicht wird und 
+gleichzeitig die Handlung des Systems die Spezifikation erf{\"u}llen.
+
+Das Hauptziel dieser Doktorarbeit ist es Leits{\"a}tzen und Werkzeuge f{\"u}r Programmierer bereitzustellen, 
+die die Entwicklung von leistungsstarken und konsistenten Sytemen erm{\"o}glichen, in dem dem Programmierer mit Hilfe eines 
+Frameworks gleichzeitig zwischen verschiedenen Konsistenzlevel w{\"a}hlen kann. Als ersten Schritt entwickelten wir RedBlue Konsistenz, 
+welches die hinreichende Bedingungen erl{\"a}utert, die es einem Programmierer erlauben zwischen schwacher Konsistenz und starker 
+Konsistenz zu w{\"a}hlen. Um die Praktikabilit{\"a}t von RedBlue Konsistenz im zweiten Schritt weiter zu erh{\"o}hen, entwickelten wir 
+SIEVE - ein Werkzeug, das sowohl kommutative, replizierte Datentypen und Programmanalyseverfahren verwendet, um den richtigen 
+Konsistenzlevel zu verschiedenen Operationen zuzuordnen und dabei die schwach konsistenten Operationen zu maximieren. 
+Abschliessend verallgemeinern wir den Kompromiss zwischen Konsistenz und Leistungsst{\"a}rke und stellen die partiell, 
+eingeschr{\"a}nkt geordnete Konsistenz vor (PoR Konsistenz) - eine generische Konsistenzdefinition, die verschiedene 
+Konsistenz level, hinsichtlich der Einschr{\"a}nkung der Sichtbarkeit zwischen paaren von Operationen, umfasst und dem 
+Programmierer erlaubt, die Einschr{\"a}nkungen zu justieren, um die gew{\"u}nschte Konsistenzsemantik zu erzielen. 
+\vspace*{\stretch{1}}
+\cleardoublepage

@@ -1,0 +1,35 @@
+\section{Restriction inference}
+\label{ch:por:sect:infer}
+When replicating a service under \PRCN, the first step is to
+infer restrictions to ensure two important system 
+properties, namely, state convergence and invariant preservation. 
+The major challenge we face is to identify a small set of restrictions for
+making the replicated service eventually converge and never violate invariants so
+that the amount of required coordination is minimal.
+With regard to state convergence, we take a similar
+methodology adopted in prior research~\cite{Shapiro2011CRDTs,
+Li2012RedBlue, Li2014SIEVE}, which is to check operation commutativity.
+However, unlike \RBCN, under which all operations that are not globally commutative must be totally ordered,
+\PRCN\ only requires that an operation must be ordered w.r.t another one if
+they do not commute.
+
+To always preserve application-specific invariants,
+instead of totally ordering all non-invariant safe
+shadow operations, i.e., those that potentially transition from a valid state
+to an invalid one, we try to isolate
+the operations that exclusively contribute to an invariant violation from
+the rest. To do so, we introduce
+a new concept, called an {\tt I-conflict set}, which defines a minimal set of
+shadow operations that lead to an invariant violation when they are running
+concurrently in a coordination-free manner. By minimal, we mean that by removing 
+any shadow operation from such a set, the violation will no longer persist. 
+To identify a minimal set of restrictions, we first perform an analysis over any subsets of the shadow 
+operation set to discover all {\tt I-conflict} sets. Then, for any such set, adding a 
+restriction between any pair of its operations is sufficient to eliminate 
+the problematic executions.
+
+Next, we present the definitions, theorems, proofs and algorithms
+regarding the restriction set identification and refinement.
+
+\input{./por/convergence}
+\input{./por/invariant}

@@ -1,0 +1,52 @@
+\subsection{Coordination protocols}
+\label{ch:por:sect:coordination}
+In this part, we present the two coordination techniques that
+we currently support in \coordtool\ and concrete
+scenarios where these mechanisms are more adequate. We leave to
+the future work the implementation of more techniques so that
+programmers have more choices for their various tradeoff points. 
+The two implemented protocols are namely, {\tt symmetry (Sym)} and {\tt asymmetry (Asym)}.
+Given a restriction $r(u, v)$ between two operations $u$ and $v$, the 
+{\tt symmetry} protocol requires both $u$ and $v$ to contact each other
+for establishing an order between them. Unlike this, an {\tt asymmetry} protocol
+provides different treaties for $u$ and $v$ by
+only requiring $u$ (or $v$) to inform the counterpart operation in the restriction $v$ (or $u$) 
+about its existence, while allowing $v$ (or $u$) to be fast executed without coordination 
+if no $u$ (or $v$) operations are running simultaneously. We illustrate the two protocols as follows:
+
+\paragraph{{\tt Sym:}} This protocol requires us to set up a centralized counter service, 
+which maintains a counter for every shadow operation, i.e., $c_{u}$ and $c_{v}$,
+and serializes reads and writes to these counters. Every such counter represents the total number of the corresponding
+operation have been accepted by the underlying system. Additionally, every replica at different
+data centers maintains a local copy of the counters, each of which represents the number of the corresponding
+operation have been observed by that replica. Initially all local copies as well as the global counters have 
+all values set to zero. Whenever an $u$ operation is received by a replica, 
+that replica would contact the counter service to increase the
+corresponding counter $c_{u}$ and get a fresh copy of the counter maintained
+for $v$. Upon receiving the reply from the counter service
+that replica can then compare the value of $c_{v}$ with its local copy.
+If they are the same, then the replica can execute $u$ without waiting. If the value is greater than
+the local copy, the local execution can only take place when all missing $v$ operations have been locally replicated.
+The same procedure is also applied to $v$, vice versa. After replicating operations, 
+the {\tt cleanUp} is called to bring the local copy of the counters to be up-to-date.
+In order to make the counter service fault tolerant, we leverage the Paxos-like state machine replication technique (BFTSmart~\cite{Bessani2014SMR}) to 
+replicate the service state in a few geo-locations.
+
+
+\paragraph{{\tt Asym:}} Unlike the above centralized solution, the core of the asymmetry protocol
+implements distributed barrier and operates via a decentralized manner as follows. Assume, for
+simplicity that $u$ is the barrier. In this case whenever
+a replica $r$ receives an operation $u$ it would have to enter the barrier,
+and contact all other replicas to request this. This requires all
+replicas in the system to stop processing $v$ operations.
+After all replicas acknowledge the entrance of $r$ in the barrier for $u$, $r$ can execute the operation, and then notify all replicas 
+that it has left the barrier (while at the same time propagating the effects
+of the operation $u$ it has just executed).
+Such a coordination strategy might incur
+in a high overhead; however, it might be interesting when one of
+the two operations in the restriction is rarely submitted to the system.
+For instance, in the auction example, {\tt closeAuction'} is
+a candidate for being used as barrier, since 
+{\tt placeBid'} dominates the operation space.
+
+

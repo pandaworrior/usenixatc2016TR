@@ -1,0 +1,60 @@
+\chapter{Conclusion}
+\label{chapter:conclude}
+
+In the recent few years, (geo-)replication has been widely adopted to build scalable services
+that offer low latency access and high throughput, in order to meet
+their unprecedented user demands. However,
+this goal is often compromised by the coordination required to 
+ensure application-specific properties such as state convergence and invariant preservation.
+This dissertation shows that differentiating the consistency requirements for various operations
+and executing operations with different amount of coordination can make
+replicated services fast as possible while ensuring their targeted consistency semantics. 
+
+In short, our approach consists of the following three major components: a) \RBCN, a novel
+consistency offers a coarse-grained choice between executing an operation under either
+strong consistency or weak (causal) consistency; b) \tool,
+a tool automatically makes an decision on which consistency level to be assigned to any
+operation in the context of \RBCN; and c) \PRCN,
+another novel consistency definition generalizes the tradeoffs behind \RBCN, offers a fine-grained
+choice in consistency requirements for various operations and reduces the amount of
+required coordination to the greatest extent possible.
+
+\RBCN\ allows strongly and weakly consistent operations to coexist
+in a single system and defines a set of sufficient conditions to determine the proper
+consistency levels for various operations by analyzing
+whether running operations in parallel can make state diverge or be invalid. In short, 
+an operation must be \red\ (strongly consistent) if either it does not commute with any other operation or
+it potentially breaks invariants in the presence of concurrency; otherwise, it can be \blue\ (causally consistent). 
+To address the problem that many original operations do not naturally commute,
+we propose to decouple the execution of an operation into a generator operation to decide
+the changes but has no side effects, and a shadow operation to apply identified changes in
+a commutative fashion across all replicas. At end, we built \gemini, which is 
+a distributed coordination and replication tier for making web applications \RBct.
+
+To the best of our knowledge, \tool\ is the first system to automate the
+choice of consistency levels offered by \RBCN\ in a replicated system. 
+It relieves the programmer from having to a) construct commutative shadow operations;
+and b) reason about the behaviors that weak consistency introduces, only requiring the
+programmer to write the system invariants that must be preserved
+and provide a small amount of annotations regarding merge semantics. To automate
+a) step, we leverage CRDTs to translate every SQL statement into commutative forms. 
+To automate b) step, we reply on weakest precondition analysis
+techniques to summarize sufficient logic conditions, under which the corresponding shadow operations
+can be invariant-safe. At runtime, an efficient evaluation of such conditions will
+tell whether strong consistency or weak consistency must or can be used.
+
+\PRCN\ has a broader view of the tradeoffs between maintaining targeted consistency semantics and
+improving performance as possible by expressing these semantics into visibility restrictions
+between pairs of operations. Weakening or strengthening the consistency semantics in the
+context of \PRCN\ is achieved by imposing fewer or
+more restrictions over relevant operations. In order to minimize the amount of required coordination,
+we developed a concept called {\tt I-conflict set}, which captures the finest composition of
+shadow operations corresponding to an invariant violation, and  a sequence of algorithms to explore
+{\tt I-conflict} sets and add the relevant restrictions. Finally, to help programmers make use of
+\PRCN, we built an efficient coordination service called \coordtool, which allows the programmer
+to choose the most lightweight protocol for replicating operations while serializing
+any pair of operations that need to be restricted.
+
+In summary, there exists some limitations in the dissertation work, but we hope that our approach 
+and all choices behind it will provide a useful reference for the system designer of either distributed
+systems or multi-core concurrent systems.

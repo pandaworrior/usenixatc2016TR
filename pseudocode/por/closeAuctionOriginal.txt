@@ -1,0 +1,9 @@
+int closeAuction(int $itemId$){
+ int $winner$ = -1;
+ beginTxn();
+ close($itemId$);
+ $winner$ = exec(SELECT userId FROM bidTable WHERE iId = $itemId$ ORDER BY bid DESC limit 1);
+ exec(INSERT INTO winnerTable VALUES ($itemId$, $winner$));
+ commitTxn();
+ return $winner$;
+}

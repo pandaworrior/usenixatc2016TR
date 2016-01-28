@@ -1,0 +1,19 @@
+func doCart($cartId$, $itemId$, $qty$){
+   beginTxn();
+   $cart \leftarrow$ scanning $cartId$ in database
+   IF $cart[itemId]$ not NULL:
+      exec(INSERT ($cartId$, $itemId$, $qty$));
+      $L\_TS \leftarrow $ getCommitOrder();//generate a new logic timestamp
+      commit(shd_doCart1, $cartId$, $itemId$, $qty$, $L\_TS$);
+   ELSE IF $qty == 0$:
+      exec(DELETE $cart[itemId]$);
+      $L\_TS \leftarrow $ getCommitOrder();
+      commit(shd_doCart2, $cartId$, $itemId$, $L\_TS$);
+   ELSE:
+      exec(UPDATE $cart[itemId].qty$ = $qty$);
+      $L\_TS \leftarrow $ getCommitOrder();
+      commit(shd_doCart1, $cartId$, $itemId$, $qty$, $L\_TS$);
+}
+
+
+

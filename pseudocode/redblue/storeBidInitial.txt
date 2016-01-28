@@ -1,0 +1,18 @@
+func storeBid($itemId$, $bid$, $maxBid$, $qty$){
+   beginTxn();
+   $bidId \leftarrow$ getUniqueBidId();   
+   item $\leftarrow$ scanning itemId in database
+   IF $item$ no exists:
+      commit(shd_storeBidNOOP);
+      return;
+   exec(INSERT ($bidId$, $itemId$, $qty$, $maxBid$));
+   //update #bid and maxBid
+   IF $bid > item.maxBid$:
+      exec(UPDATE $item.max\_bid = bid, item.nb\_of\_bids += 1$);
+      $L\_TS$ = getCommitOrder();//generate a new logic timestamp
+      commit(shd_storeBid1, $bidId$, $itemId$, $bid$, $qty$, $L\_TS$);
+   ELSE:
+      exec(UPDATE $item.nb\_of\_bids += 1$);
+      $L\_TS$ = getCommitOrder();
+      commit(shd_storeBid2, $bidId$, $itemId$, $bid$, $qty$, $L\_TS$);
+}

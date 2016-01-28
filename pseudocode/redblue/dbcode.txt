@@ -1,0 +1,4 @@
+the database is unmodified.  it receives "normal" db operations.
+
+performance optimization:  support ability for sequencer to specify commit order
+   or at least to specify "commit after" relationships

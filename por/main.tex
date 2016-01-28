@@ -1,0 +1,155 @@
+%-----------------------------------------------------------------------------
+%
+%               Template for sigplanconf LaTeX Class
+%
+% Name:         sigplanconf-template.tex
+%
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Guide:        Refer to "Author's Guide to the ACM SIGPLAN Class,"
+%               sigplanconf-guide.pdf
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005
+%
+%-----------------------------------------------------------------------------
+
+
+\documentclass[10pt]{sigplanconf}
+
+% The following \documentclass options may be useful:
+
+% preprint      Remove this option only once the paper is in final form.
+% 10pt          To set in 10-point type instead of 9-point.
+% 11pt          To set in 11-point type instead of 9-point.
+% authoryear    To obtain author/year citation style instead of numeric.
+
+\usepackage{amsmath}
+\usepackage{titlesec}
+
+\begin{document}
+
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+
+%reduce a bit the spaces before or after section titles
+\titlespacing*{\section}
+{0pt}{0.8ex plus 1ex minus .2ex}{0.8ex plus .2ex}
+
+\conferenceinfo{PaPoC'15}{April 21, 2015, Bordeaux, France} 
+\copyrightyear{2015} 
+\copyrightdata{978-1-4503-3238-5/15/04} 
+\doi{http://dx.doi.org/10.1145/2745947.2745955}
+
+% Uncomment one of the following two, if you are not going for the 
+% traditional copyright transfer agreement.
+
+%\exclusivelicense                % ACM gets exclusive license to publish, 
+                                  % you retain copyright
+
+%\permissiontopublish             % ACM gets nonexclusive license to publish
+                                  % (paid open-access papers, 
+                                  % short abstracts)
+
+\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{Minimizing Coordination in Replicated Systems\pagelimit{4}}
+
+\authorinfo{Cheng~Li$^{\dagger}$ Jo{\~a}o~Leit{\~a}o$^{\ddagger}$ Allen~Clement$^{\dagger}$\thanks{currently working at Google} Nuno~Pregui{\c c}a$^{\ddagger}$ Rodrigo~Rodrigues$^{\ddagger}$}
+	{$^{\dagger}$MPI-SWS $^{\ddagger}$NOVA LINCS / NOVA Univ.\ Lisbon\vspace{-1cm}}
+
+%\authorinfo{Cheng Li}
+%           {MPI-SWS}
+%           {chengli@mpi-sws.org}
+%\authorinfo{Jo{\~ a}o Leit{\~ a}o}
+%           {NOVA-LINCS FCT UNL}
+%           {jc.leitao@fct.unl.pt}
+%\authorinfo{Allen Clement}
+%           {Google Inc.}
+%           {aclement@gmail.com}
+%\authorinfo{Nuno Pregui{\c c}a}
+%           {NOVA-LINCS FCT UNL}
+%           {nuno.preguica@fct.unl.pt}
+%\authorinfo{Rodrigo Rodrigues}
+%           {NOVA-LINCS FCT UNL}
+%           {rodrigo.rodrigues@fct.unl.pt}
+
+\maketitle
+
+
+\begin{abstract}
+Replication has been widely adopted to build highly scalable services, but
+the goal\changebars{}{ of achieving high performance} is often compromised by the
+coordination required to ensure application-specific properties such as
+state convergence and invariant preservation. In this paper, we propose a
+principled mechanism to minimize coordination in replicated systems via the
+following components: a) a notion of restriction over a pair of operations
+that captures the fact that the two operations must be ordered w.r.t each
+other in any partial order; b) a generic consistency model which, given a
+set of restrictions, requires those restrictions to be met in all
+admissible partial orders; c) principles for identifying a \changebars{minimal}{} set of
+restrictions to ensure relevant properties\changebars{}{, where removing any restriction
+from this set will no longer preserve all these properties}; and d) a
+coordination service that dynamically \changebars{maps}{translates} restrictions to the most
+efficient coordination protocols. \changebars{Our preliminary experience on analyzing
+a few applications shows that we are able to infer a set of restrictions which 
+comprises a minimal coordination plan.}{}
+\end{abstract}
+
+% \category{CR-number}{subcategory}{third-level}
+% 
+% % general terms are not compulsory anymore, 
+% % you may leave them out
+% \terms
+% term1, term2
+% 
+% \keywords
+% keyword1, keyword2
+
+\input{intro}
+%\input{related}
+%\input{system}
+\input{porconsistency}
+\input{inference}
+\input{casestudies}
+\input{coordinationpolicy}
+%\input{toolsupport}
+\input{related}
+\section{Conclusion}
+This paper proposed a research direction for building replicated system that employs a minimal amount of coordination in
+order to achieve both invariant preservation and state convergence. We aim to define a new generic consistency model, which \changebars{maps
+consistency requirements to a minimal set of fine-grained restrictions over pairs of operations}{allows to
+capture a set of minimum coordination restrictions to ensure the desired properties}, while at the same time paving the way for adaptive use of different coordination
+techniques for enforcing those restrictions.
+
+{\footnotesize
+\acks
+
+The research of R.\ Rodrigues is funded by the European
+Research Council under ERC Starting Grant No.\ 307732. This work is
+partially funded by FCT under project PEst-OE/EEI/UI0527/2014.
+}
+% We recommend abbrvnat bibliography style.
+
+\bibliographystyle{abbrvnat}
+{%\footnotesize
+\scriptsize
+\bibliography{sigproc}
+}
+
+\end{document}
+
+%                       Revision History
+%                       -------- -------
+%  Date         Person  Ver.    Change
+%  ----         ------  ----    ------
+
+%  2013.06.29   TU      0.1--4  comments on permission/copyright notices
+

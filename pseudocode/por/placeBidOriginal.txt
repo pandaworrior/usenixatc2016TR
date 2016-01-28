@@ -1,0 +1,10 @@
+boolean placeBid(int $itemId$, int $clientId$, int $bid$){
+ boolean $result$ = false;
+ beginTxn();
+ if(open($itemId$)){
+   exec(INSERT INTO bidTable VALUES ($bid$, $clientId$, $itemId$));
+   $result$ = true;
+ }
+ commitTxn();
+ return $result$;
+}

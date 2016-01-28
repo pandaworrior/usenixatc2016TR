@@ -1,0 +1,124 @@
+\subsection{Case studies}
+\label{ch:por:sect:casestudies}
+\begin{table}[t!]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+App & RedBlue consistency & PoR consistency\\
+\hline
+\hline
+RUBiS & $r(registerUser, registerUser)$ & $r(registerUser, registerUser)$ \\ 
+      & $r(storeBuyNow, storeBuyNow)$ & $r(storeBuyNow, storeBuyNow)$\\
+      & $r(placeBid, placeBid)$ & $r(placeBid, closeAuction)$\\
+      & $r(closeAuction, closeAuction)$ & \\
+      & $r(placeBid, closeAuction)$ & \\
+      & $r(registerUser, storeBuyNow)$ &\\
+      & $r(registerUser, placeBid)$ & \\
+      & $r(registerUser, closeAuction)$ &\\
+      & $r(storeBuyNow, placeBid)$ & \\
+      & $r(storeBuyNow, closeAuction)$ & \\
+\hline
+\end{tabular}
+\caption{Restrictions}
+\label{tab:restrict}
+\end{table}
+
+We apply the analysis (Algorithm~\ref{alg:mrdiscover}) to a completed version of RUBiS, which
+implements a {\tt closeAuction} operation for declaring auction winners, to
+identify a set of restrictions comprising a minimal amount of coordination without
+sacrificing either state convergence or invariant preservation. This subsection
+reports our experience on conducting such analysis and the final static result we
+obtained.
+
+\noindent\paragraph{State convergence:} As we deploy RUBiS alongside \tool,
+all shadow operations generated at runtime commute w.r.t each other and
+there is no need to restrict any pair of shadow operations. The final output of
+the state convergence restriction discovery method (Algorithm~\ref{alg:scdiscover}) is an empty restriction set.
+
+\noindent\paragraph{Invariant preservation:} By analyzing the source code, we determined
+four invariants of the completed version of RUBiS, namely, (a) identifiers 
+assigned by the system are unique; (b) nicknames chosen by
+users are unique; (c) item stock must be non-negative; and (d) the auction 
+winner must be associated with the highest bid across all accepted bids. We continued by
+performing the {\tt I-conflict set} analysis (Algorithm~\ref{alg:iconflictassess}) against all RUBiS shadow operations. With regard
+to the first invariant, since we take advantage of the coordination-free unique identifier generation method
+offered by \tool, no {\tt I-conflict sets} were found for violating it. In contrast, 
+for the remaining three invariants, we identified
+the following {\tt I-conflict} sets: 
+
+\begin{itemize}
+ \item$\{registerUser', registerUser'\}$. The (b) invariant would
+be violated if the two operations proposed the same $nickname$ and were submitted to different sites simultaneously;
+ \item $\{storeBuyNow', storeBuyNow'\}$. The (c) invariant would be violated if both operations simultaneously
+deducted a positive number from $stock$ while $stock$ was not enough; 
+ \item $\{placeBid', closeAuction'\}$. The (d) invariant would be violated if both operations were submitted at the same
+time to different sites plus $placeBid'$ carried a higher bid than all accepted bids.
+\end{itemize} 
+Each of the three above {\tt I-conflict sets} covers a class
+of violating executions of the respective invariant. To eliminate these
+violations, according to Algorithm~\ref{alg:isdiscover}, we added the following restrictions, namely,
+$r(registerUser', registerUser')$, $r(storeBuyNow', storeBuyNow')$ and $r(placeBid', closeAuction')$, 
+which are summarized in Table~\ref{tab:restrict}. This set is a minimal restriction
+set since it is sufficient to ensure the two important properties while none of these restrictions
+can be removed. However, compared to the PoR consistency solution, replicating RUBiS
+via RedBlue consistency would require more restrictions, since the definition states that
+all non-invariant safe shadow operations must be red (strongly consistent), i.e., the four shadow operations presented
+in the above list must be restricted in a pair-wise fashion, as shown in Table~\ref{tab:restrict}. 
+\if 0
+We have previously introduced an auction service
+as a motivating example for the limitations of hybrid consistency models such as
+\RBCN. We \changebars{are able to compose an invariant-violating
+execution with three concurrent operations touching a shared auction, 
+namely, a {\tt close\_auction} operation and
+two {\tt place\_bid} operations whose associated bids are higher than
+all accepted bids.}{remind the reader that such a service supports two operations, in 
+particular a {\tt place\_bid} operation to submit a new bid for an
+auction, which is accepted provided that the target auction is not closed; and a {\tt close\_auction}
+operation which closes the auction while at the same time declares a winner. 
+An application-specific invariant is that the declared winner must be the user
+that issued the highest accepted bid (while the auction was not closed).}
+\changebars{According to the definition in Section~\ref{sect:intro},
+this execution is not minimal since the composition of a {\tt place\_bid}
+and {\tt close\_auction} operation is already sufficient to trigger the violation. Thus,
+we refine the execution by removing one of the {\tt place\_bid} operations from it.}{} 
+As a way to \changebars{preserve}{enforce} 
+the \changebars{}{application-specific }invariant of this service under \PRCN\ 
+a restriction \changebars{must}{can} be created between \changebars{any pair of a}{operations of type} {\tt place\_bid} and 
+\changebars{a}{operations of the type} {\tt close\_auction}\changebars{ operation,
+i.e., $r({\tt place\_bid}, {\tt close\_auction})$}{}. 
+The advantage of this approach is that \changebars{}{ the instances of}{\tt place\_bid} \changebars{operations}{}
+have no restrictions among themselves, which implies that no coordination mechanism is required when executing \changebars{them
+concurrently}{several 
+instances of this type of operation}. \changebars{Given the fact that these
+operations}{ which, incidentally,} are the most common in
+such a service\changebars{, performance will be dramatically improved}{}.
+\fi
+\if 0
+\paragraph*{Banking Service} Another interesting example is an
+online banking service, that supports operations such as {\tt deposit} and 
+{\tt withdraw} which respectively, allows a user to add or remove a given amount to or from
+the current bank account balance, while a third operation\changebars{}{ type denominated}
+{\tt accrueinterest}, updates the balance value of an account by taking into
+consideration its current balance and a given interest rate. \changebars{We further assume}{In this service
+one can imagine that there is } an application-specific invariant which states
+that account balance values must be non-negative.
+
+In this particular example, to ensure state convergence, \changebars{}{operations
+of type}{\tt accrueinterest} operations must be executed with coordination in relation 
+to \changebars{}{operations of type}{\tt deposit} or {\tt withdraw} operations\changebars{, i.e.,
+creating two restrictions $r({\tt accrueinterest}, {\tt deposit})$
+and $r({\tt accrueinterest}, {\tt withdraw})$, as multiplication does not
+commute with addition or subtraction.}{ In \PRCN\ this is modeled
+by creating two restrictions respectively, between  {\tt accrueinterest} and 
+{\tt deposit} and between {\tt accrueinterest} and {\tt withdraw}.}
+However to ensure the application-specific invariant, special care has to
+given to \changebars{}{operation of the type }{\tt withdraw}\changebars{ operations, as
+two concurrent {\tt withdraw} operations may drive the balance value to negative}{}. 
+\changebars{As a result}{In fact}, \changebars{}{all instances of }these
+operations have to be coordinated among themselves. To capture this 
+fact one has to add an additional restriction \changebars{}{to order operations of type
+{\tt withdraw}, i.e.,}$r({\tt withdraw}, {\tt withdraw})$. \changebars{}{This approach allows 
+operations of type {\tt deposit}
+to be executed without any form of coordination
+among themselves.}
+\fi

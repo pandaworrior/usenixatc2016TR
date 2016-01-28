@@ -1,0 +1,3 @@
+placeBid'(int $itemId$, int $clientId$, int $bid$){
+  exec(INSERT INTO bidTable VALUES ($bid$, $clientId$, $itemId$));
+}

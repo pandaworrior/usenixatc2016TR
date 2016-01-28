@@ -1,0 +1,4 @@
+func shd_doCart2($cartId$, $itemId$, $L\_TS$){
+   $cart \leftarrow$ scanning $cartId$ in database;
+   exec(UPDATE $cart[itemId].flag$ = TRUE WHERE $cart[itemId].ts <= L\_TS$);
+}

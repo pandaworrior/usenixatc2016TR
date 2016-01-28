@@ -1,0 +1,18 @@
+doBuyConfirmGenerator($cartId$){
+ $sp = $ getScratchpad(); 
+ $sp.beginTxn()$;
+ $cart = sp.exec$(SELECT * FROM cartTb WHERE cId=$cartId$);
+ $cost = $ computeCost($cart$);
+ $orderId = $ getUniqueId();
+ $sp.exec$(INSERT INTO orderTb VALUES ($orderId$,$cart.item.id$,$cart.item.qty$,$cost$));
+ $item = sp.exec$(SELECT * FROM itemTb WHERE id=$cart.item.id$);
+ if $item.stock - cart.item.qty < 10$ then: 
+    $delta = item.stock-cart.item.qty+21$; 
+    if $delta > 0$ $sp.exec$(UPDATE itemTb SET $item.stock += delta$);
+    else $sp.discard()$; return;
+ else $sp.exec$(UPDATE itemTb SET $item.stock -= cart.item.qty$);
+ $sp.exec$(DELETE FROM cartTb WHERE cId=$cartId$ AND id=$cart.item.id$);
+ $L\_TS = $ getCommitOrder();
+ $sp.discard()$;
+ if replenished return (doBuyConfirmIncre'($orderId$,$cartId$,$cart.item.id$,$cart.item.qty$,$cost$,$delta$,$L\_TS$));
+ else return (doBuyConfirmDecre'($orderId$,$cartId$,$cart.item.Id$,$cart.item.qty$,$cost$,$L\_TS$));}

@@ -1,0 +1,79 @@
+\chapter{System model}
+\label{chapter:sysmodel}
+
+%\section{System model}\label{sect:model}
+%\pagelimit{0.5}
+In this chapter, we present the system model our work is built atop and
+a set of desirable end-to-end system properties (marked in bold) we intend to provide.
+
+We align our notations with those defined in the well-known state
+machine replication literature~\cite{Schneider1990RSM}. We assume a distributed system with state 
+fully replicated across $k$ sites denoted by $\textit{site}_0\ldots \textit{site}_{k-1}$. Each site
+hosts a replica, and each replica behaves following a deterministic state machine model.
+It is worth mentioning that site is a logical unit that hosts a full copy of system state,
+and hence it is possible to have multiple sites across geo-graphically dispersed data
+centers or even within a single data center. In the rest of the document, the terms ``site'' and ``replica'' are interchangeable.
+
+The system defines a set of operations $\mathcal{U}$ manipulating
+a set of reachable states $\mathcal{S}$. We do not restrict the type of operations that
+can be executed within that system, a property we call {\bf general operations}.
+If operation $u$ is applied against a system state $S$, 
+it produces another system state $S'$; we will also denote this by $S'=S+u$. 
+Given a total order $T(U, <)$ over a
+set of operations $U$, where $U \subset \mathcal{U}$, if we sequentially apply
+all operations $U$ against a system state $S$ according
+to $<$, then we denote the final state by $S(T)$. $S(T) = $
+$S+u_{0} + u_{1} + ... + u_{i} + ... + u_{|U|-1}$,
+where $0\leq i<|U|$. We say that a pair of operations $u$ and $v$ {\em commute} 
+if $\forall S \in \mathcal{S},S+u+v=S+v+u$. An operation $u$
+is {\it globally commutative}, if it commutes
+with all operations in $\mathcal{U}$ (including itself).
+
+Each operation $u$ is initially submitted by a client at one site which we
+call $u$'s \emph{primary site} and denote $\textit{site}(u)$;
+the system then later replicates $u$ to all remaining sites. Upon receiving an operation, replicas
+at the recipient sites apply it against their local state. It is important that 
+all replicas that have executed the same set of operations are in the same state, 
+i.e., that the underlying system offers a {\bf state convergence} property; 
+otherwise a quiescent system would return different views of the
+state depending on which replicas the users connected to.
+%; and the system should provide
+%a set of {\bf stable histories}, meaning that user actions cannot be undone.
+
+As clients are always expecting fast responses to their requests, 
+we aim to provide {\bf low latency} access to the service~\cite{Schurman2009latency}. 
+Another important property that consists of ensuring a good user
+experience is to preserve \textbf{causality}, both in terms of the monotonicity of user requests
+within a session and preserving causality across clients, which is key
+to enabling natural semantics~\cite{Petersen1997Flexible}. Additionally,
+operations invoked by client requests should return a {\bf single value}, precluding solutions that return a set of values
+corresponding to the outcome of multiple concurrent updates.
+
+\if 0
+If such a system received
+a set of operations $U$ and generated corresponding replies to the operation initiators (clients),
+then all replicas must eventually receive all operations in $U$, when the system becomes
+quiescent, i.e., no more operations are coming and all operations are reliably propagated.
+Every replica then executes $U$ in a sequence, while different replicas might observe
+different sequential execution orders.
+\fi
+
+The system also maintains a set of application-specific
+{\bf invariants}. For instance, in a banking application,
+bank balance values are never negative; stock values must be non-negative as well in a shopping
+cart application; and, in a bidding website, the winner of an auction must issue
+the highest accepted bid. To capture this, we define the primitive $\textit{valid}(S)$ to be {\it
+  true} if state $S$ satisfies all these invariants and {\it false}
+otherwise. We denote a valid initial state of every service by $S_0$. We say an operation $u$ is {\it correct} if for
+all valid states $S$, $S + u$ is also valid. In the previous banking example,
+a {\tt deposit} operation, adding a positive delta to a user's account balance,
+is {\it correct}, as its application against any valid state always
+ensures that the corresponding balance value is above zero. Unlike
+{\tt deposit}, a {\tt withdraw} operation can be {\it correct} if it includes
+an {\tt if} statement to check whether there is enough balance,
+ but would be incorrect if the programmer did not include this check.
+
+
+
+
+

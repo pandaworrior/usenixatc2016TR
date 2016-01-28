@@ -1,0 +1,52 @@
+\usepackage{ifthen}
+\usepackage{ulem}
+\usepackage{color,soul}
+\normalem % for changebars
+
+%\definecolor{lightblue}{rgb}{0.8,0.8,1.0}
+%\definecolor{lightblue}{rgb}{1.0,0,0}
+
+%% Is the version public or not?
+\newboolean{publicversion}
+%\setboolean{publicversion}{true}
+\setboolean{publicversion}{false}
+
+
+\ifthenelse{\boolean{publicversion}}{
+  \newcommand{\grumbler}[2]{}
+  \newcommand{\changebars}[2]{#1}
+  \newcommand{\pagelimit}[1]{}
+}{
+  \newcommand{\grumbler}[2]{{\color{red}{\bf #1:} #2}}
+  \newcommand{\pagelimit}[1]{{\color{red}{ #1 pages}}}
+  \newcommand{\changebars}[2]{{\tiny [check]}[{\em \color{red}#1}] [{\sout {\em #2}]}}
+}
+
+
+%%  person specific grumblers
+\newcommand{\cheng}[1]{\grumbler{cl}{#1}}
+\newcommand{\rodrigo}[1]{\grumbler{rr}{#1}}
+\newcommand{\joao}[1]{\grumbler{jg}{#1}}
+\newcommand{\nuno}[1]{\grumbler{np}{#1}}
+\newcommand{\allen}[1]{\grumbler{agc}{#1}}
+
+\newcommand{\specialcell}[2][c]{%                                                                                                   
+  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\newcommand\newemdashes{\nobreakdash---}
+
+\newcommand{\eat}[1]{}
+
+%insert a breakline into math formula
+\newcommand{\mytuple}[1]{%
+  \@tempcnta=0
+  \bigl\langle
+  \@for\@ii:=#1\do{%
+    \@insertbreakingcomma
+    \textit{\@ii}
+  }%
+  \bigr\rangle
+}
+\def\@insertbreakingcomma{%
+  \ifnum \@tempcnta = 0 \else\,,\ \linebreak[1] \fi
+  \advance\@tempcnta\@ne
+}

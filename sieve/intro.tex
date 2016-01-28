@@ -1,0 +1,233 @@
+\section{Motivation and contributions}
+\label{ch:sieve:sect:motivation}
+
+As mentioned in Chapter~\ref{chapter:intro}, the providers of
+planetary-scale services---such as Google~\cite{GoogleWeb}, Amazon~\cite{AmazonWeb}, or Facebook~\cite{FacebookWeb}
+face an inherent tension between improving performance and maintaining targeted consistency
+semantics. In order to resolve this tension, in Chapter~\ref{chapter:redblue}, we presented
+the \RBCN\ framework, which offers the choice between executing an operation under a strong or a weak
+consistency model, and the methodology for increasing the safe usage of weak consistency. 
+As shown in Section~\ref{ch:redblue:sect:casestudies} in Chapter~\ref{chapter:redblue},
+adapting existing applications to \RBCN\ consists of the following
+two manual tasks. First, one must transform every application operation into a generator and a
+set of commutative shadow operations, each of which corresponds to a distinct
+side effect. Second, one must correctly
+identify which shadow operations may break application invariants,
+and label them appropriately so that they execute under strong consistency.
+Although our experience shows that modifying benchmark applications
+to be \RBCAJ\ is not difficult, in practice, as the code base increases, this manual work can 
+become very challenging and error-prone. This is because it
+imposes on the application programmer the non-trivial burden of
+a) figuring out side-effects of every code path in the original operations;
+b) implementing shadow operations and verifying whether any pair of them commutes; and c)
+understanding the semantics of each shadow operation \changebars{to determine if they meet
+the properties for safe execution under weak consistency.}{and how
+the assignment of different consistency levels (either weak or strong consistency) to different shadow operations influences
+overall semantics that are perceived by the users.} 
+
+In this chapter, to ease this burden on the programmer,
+we present \tool, the first tool (to the best of our knowledge) that automates
+this adaptation to multi-level consistency such as \RBCN. This tool focuses on
+an important and widely deployed class of applications, namely
+Java-based applications with a database backend. Overall, we make the following contributions:
+
+\begin{enumerate}
+\item {\bf Commutativity transformation.} One of the obstacles for labeling a large number
+of operations as \blue\ is the fact that not many operations are naturally
+commuting with all others, as shown in Section~\ref{ch:redblue:sect:casestudies} in Chapter~\ref{chapter:redblue}. 
+To ensure good performance, \tool\ automatically transforms the side effects of every application operation into their commutative
+form. To this end, we build on previous work on commutative replicated data types
+(CRDTs)~\cite{Shapiro2011Conflict,Preguica2009CRDT}, i.e., data types whose
+concurrent operations commute, and apply this concept to relational
+databases. This allows programmers to only specify which particular CRDT semantics they intend by
+adding a small annotation in the database schema, and \tool\ automatically
+generates the shadow operation code implementing the chosen semantics.
+%In the absence of an annotation, \tool\ implements the default ``last writer
+%wins'' semantics, whereby the write with the largest timestamp completely
+%overwrites any earlier writes.
+
+\item {\bf Efficient labeling.} \tool\ uses program analysis to identify commutative shadow operations that might
+violate application-specific invariants when
+executed under weak consistency semantics, and runs them under strong
+consistency. To make the analysis accurate and lightweight,
+we divide it into a potentially expensive static part and an
+efficient check at runtime. The static analysis generates a set of
+abstract forms ({\em templates}) that represent the space of possible shadow operations produced at runtime,
+and identifies for each template a logical condition ({\em weakest precondition}) under which
+invariants are guaranteed to be preserved. This information is
+then stored in a dictionary, which is looked up and evaluated at
+runtime,
+% when a shadow operation is produced,
+%we perform a quick lookup to retrieve the corresponding static logical condition,  and evaluate it
+to determine whether each shadow operation can run under weak consistency.
+
+\item {\bf Minimal manual intervention.} Unlike previous work, in which
+either the adoption of new programming models or a significant number of changes to
+the original source code is needed, using \tool, the programmer has to 
+only specify the application invariants that must be preserved
+and to annotate a small amount of semantic information
+about how to merge concurrent updates, while keeping the application code base unchanged.
+\end{enumerate}
+
+%\begin{itemize}
+%
+%\item Since commutativity is required for the use of weak consistency,
+%  \tool ensure that all operations commute by design.  To this end, we
+%  propose a set of commutative replicated data types
+%  (CRDTs)~\cite{Preguica2009CRDT}, i.e., data types whose operations
+%  commute when they are concurrent, aimed at applications that store
+%  their persistent state in a relational database. These CRDTs require
+%  a small annotation in the database schema, only to disambiguate the
+%  semantics of updates. With the support of CRDTs,
+%  \tool\ automatically transforms the side effects of every
+%  application operation into their commutative forms.
+%
+% \allen{Why is commutativity required for weak consistency?  we know
+%   that, but I don't know where that knowledge comes from}
+%
+%\allen{``We propose a set of CRDTs'' makes it sound like the CRDTs are
+%  a contribution of the work.  My understanding is that they are a
+%  tool we are leveraging for commutativity.  Corollary: What are the
+%  contributions that we want to emphasize?}
+%
+%\item We resort to program analysis to determine whether operations
+%  can violate invariants when they are executed under weak
+%  consistency. In particular, we split this analysis into a relatively
+%  expensive static part and an efficient check at runtime. The static
+%  analysis uses an automated verification tool called
+%  Jahob~\cite{Kuncak2007Jahob} to identify a set of logical conditions
+%  (weakest preconditions) of all execution patterns, under which
+%  invariants are preserved. These static logical conditions are then
+%  efficiently validated at runtime to determine whether operations can
+%  run under weak consistency or not.
+%
+%\end{itemize}
+
+
+%\allen{Taking a step back, the current intro does a good job of
+%  enumerating the techniques used but does not clearly identify the
+%  technical challenges we faced in implementing those techniques.
+%  I.e., why is/was the dictionary hard to build?  One take on what
+%  we've got so far is a clear identification of the problem space and
+%  strategy we want to use; what is missing, in my opinion, is the
+%  challenges that we have to overcome in order to implement our
+%  strategy.}
+
+
+% These are that weakly consistent operations must commute with all
+% other operations, and that incorporating their side effects against a
+% state that is different than the one that produced those side effects
+% cannot lead to the violation of invariants
+
+\if 0
+
+\rodrigo{In terms of motivation, we shouldn't narrow the scope unnecessarily to
+the problem of addressing the automatization of our RedBlue work. I
+think we have a broad motivation which is to address a problem raised
+in Doug Terry's talk ~\cite{Terry2011Baseball}, which is that of helping
+applications determine what level of consistency they require, and
+doing so at the finest possible granularity so that they can be fast
+when possible and consistent if necessary.
+Then, in terms of the solution, I would say that we are based on the
+observation that there are two crucial properties involved in the
+classification, which are commutativity and invariant-preservation
+(need to explain what that means), and then we use two key ideas:
+1. A careful separation between statically analyzing the conditions
+under which operations preserve invariants, and a fast, dynamic check
+to determine of the parameters fed to the operations meet those
+conditions.
+2. The use of CRDTs to build operations that commute by design,
+precluding the need to analyze the code for commutativity.}
+
+Geo-replication~\cite{Hamilton2008GeoFacebook, Cooper2008PNUTs, DeCandia2007Dynamo, 
+Calder2011Azure, Corbett2012Spanner}, replicating data at geo-graphically dispersed data centers (sites), is
+a major solution for popular online services to scale themselves to meet the
+needs of their increasingly growing user base. With this technique, users
+contact a nearby site to get fast responses, and coordination among
+all data centers is required to keep data globally consistent. However, offering low latency
+and maintaining strong consistency cannot be achieved simultaneously~\cite{Brewer2010CAP}, as
+a result of the high cost of immediate inter-site coordination required by strong consistency. In order to
+offer low latency, many geo-replicated systems~\cite{DeCandia2007Dynamo,Lloyd2011COPS} 
+resort to use a weak consistency model that allows data to temporally diverged and guarantees
+the final data convergence. 
+
+One of the most popular weak consistency models is \emph{eventual consistency}~\cite{Vogels2008Eventual}, 
+in which each site independently processes requests
+without immediate coordination, updates are asynchronously exchanged across sites, and conflicts
+are resolved at either storage system level or application level. Although eventual consistency
+and its invariants have been widely deployed in many services, its
+practical usage is still problematic, since some invariants or constraints that need to hold 
+globally true may be violated. For example, the unacceptable state that the last book sold to
+multiple distinct users appears in an eventually consistent online shopping cart application. 
+
+To prevent applications from breaking their invariants, while preserving fast responses,
+some recent work like Lazy Replication~\cite{Ladin1992LazyRep}, Geo-transaction ~\cite{Sovran2011TranGeo} and RedBlue
+Consistency ~\cite{Li2012RedBlue} proposed to allow strong consistency to co-exist
+with eventual consistency in a single system. This proposal achieves fast responses 
+by running eventually consistent operations at any site, and ensures invariant preservation
+by globally coordinating strongly consistent operations. Most recently, Terry
+ et al. identified a six-level consistency model retaining the above two
+and containing four new consistency semantics in between~\cite{Terry2013CBSLA}.
+
+The key to adopting the hybrid consistency model for geo-replication is to
+decide which part of a system can be eventually consistent and 
+which part must be strongly consistent. A principled classification methodology,
+presented by RedBlue Consistency~\cite{Li2012RedBlue}, associates 
+eventual consistency with an operation if it commutes with all others 
+and doesn't violate any invariant, and attaches strong consistency to the rest. 
+With this solution, however, programmers have to manually prove operation commutativity and
+invariant preservation. Moreover, in order to enable geo-replication to lead
+to performance benefits, an application must have a majority of operations 
+to be eventually consistent. However, in practice, not many operations are naturally
+commuting with all others. RedBlue Consistency tried to address this problem by 
+asking programmers to manually transform non-commutative
+operations to be commutative. The significant drawback of these two
+manual tasks is that they are not scalable and can be error-prone while
+being applied to large-scale code base.
+
+In this project, we aim at automatically constructing more commutative
+operations for an application, and categorizing operations into
+the strongly and eventually consistent groups. The key idea to achieving this goal
+is to first make every operation commutative (can be eventually consistent), 
+and then identify a set of commutative operations that potentially violate invariants
+(must be strongly consistent).
+
+We built an automatic tool, \tool, to instantiate the above key ideas. \tool\ relies on
+two important techniques, namely, commutative replicated data types (CRDTs)~\cite{Preguica2009CRDT}
+and Jahob~\cite{Kuncak2007Jahob}. CRDTs is a set of data types whose operations commute
+when they are concurrent. With the support of CRDTs, \tool\ first transforms the side effects of every execution of application
+transactions into their commutative forms (\emph{shadow operations}~\cite{Li2012RedBlue}). 
+Due to the commutativity obtained by design, all shadow operations can be potentially 
+labeled as eventual consistency. To enable this transformation, we still require 
+developers to annotate their applications with a minimal amount of information to indicate which 
+conflict merging solution they want to apply to a state or an operation. Unlike the previous
+manual processes, the human intervention within our solution is much less. In addition, programmer 
+supplied annotations can be automatically derived from an analysis over data manipulation patterns. 
+We leave this as future work. 
+
+Jahob is a verification tool to statically prove whether program properties are
+satisfied in all possible executions. \tool\ uses Jahob to identify a set of logical 
+conditions (weakest preconditions) of all execution patterns, under which invariants 
+are preserved. These static logical conditions will be efficiently validated at runtime for
+the shadow operation classification. A shadow operation must be strongly consistent 
+if the weakest preconditions of its corresponding execution pattern are evaluated to \texttt{False} ;
+Otherwise, it can be eventually consistent.
+
+In addition, our tool \tool\ has the following properties: (a) \textbf{applicability} 
+It is easy-of-use. Programmers who want to adopt this approach are only required to invest a minimal 
+amount of time and effort; (b) \textbf{correctness} The transformation ensures state convergence, 
+and the classification guarantees that no invariants are violated; 
+(c) \textbf{scalability} It is scalable, despite that the complexity of application semantics 
+and the number of application operations significantly increase; and (d) \textbf{incrementally} 
+It is able to incrementally classify operations in the case when programs are changed. 
+For example, if programmers change a small part of their code, this solution doesn't need to classify all 
+operations again, instead only re-considers these modified operations and all relevant operations.
+
+\fi
+We evaluate \tool\ using TPC-W and RUBiS. Our results show that it
+is possible to achieve the performance benefits of weakly consistent replication
+when it does not lead to breaking
+application invariants without imposing the burden of choosing
+the appropriate consistency level on the programmer, and with
+a low runtime overhead.
+

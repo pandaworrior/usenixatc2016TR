@@ -1,0 +1,9 @@
+func shd_doCart1($cartId$, $itemId$, $qty$, $L\_TS$){
+     $cart \leftarrow$ scanning $cartId$ in database;
+     IF $cart[itemId]$ is NULL:
+        exec(INSERT ($cartId$, $itemId$, $qty$, $L\_TS$));
+     ELSE IF $cart[itemId].flag == FALSE$:
+           exec(UPDATE $cart[itemId].quantity = qty$ WHERE $cart[itemId].ts <= L\_TS$);
+        ELSE:
+           exec(UPDATE $cart[itemId].quantity = qty$ AND $cart[itemId].flag = FALSE$ WHERE $cart[itemId].ts <= L\_TS$);
+}

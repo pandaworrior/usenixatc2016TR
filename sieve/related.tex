@@ -1,0 +1,148 @@
+\section{Related work}
+\label{ch:sieve:sect:related}
+We summarize and compare previous work with \tool\ according to the
+following categories:
+
+\noindent\paragraph{Weak consistency and commutativity.} 
+In order to provide users with low latency access to web services,
+a wide range of their underlying replicated systems have relied on weak
+consistency such as causal consistency. They produce a reply to the user
+ as soon as the corresponding operation executes in a single replica 
+with respect to physical proximity. The usage of these systems requires
+a special care, i.e., they must be equipped with procedures for handling 
+conflicts that may arise from concurrent operations. In some
+systems, such as Bayou~\cite{Terry1995Managing},
+Depot~\cite{Mahajan2010Depot}, and Dynamo \cite{Decandia2007Dynamo},
+the programmer has to provide application-specific code for merging 
+concurrent versions. Other systems, such as Cassandra~\cite{Lakshman2010Cassandra},
+COPS~\cite{Lloyd2011Causal}, Eiger~\cite{Lloyd2013Stronger} and
+ChainReaction \cite{Almeida2013Chainreaction}, use a simple
+last-writer-wins strategy for merging concurrent versions. This
+simple strategy may, however, lead to lost updates.
+%, making it inappropriate for
+%many applications.
+%However, because they never use strong
+%consistency, these systems cannot guarantee that invariants are
+%preserved when two operations execute concurrently.
+
+Some systems have explored using operation
+commutativity to guarantee that all replicas converge to the same
+state, regardless of operation execution order. For example, 
+Pregui{\c c}a et al. and Shapiro et al. propose CRDTs (commutative or conflict-free replicated data types), 
+a set of abstract data types whose operations commute in presence of
+concurrency\cite{Preguica2009CRDT,Shapiro2011Conflict}.
+Most recently, Walter \cite{Sovran2011PSI} includes a single pre-defined commutative data type, 
+\emph{cset}, which could be seen as an appreciation of the previous CRDT work. 
+Commutative operations that implement variants of
+CRDTs can also be used in different frameworks such as Lazy replication \cite{Ladin1992LazyReplication},
+RedBlue \cite{Li2012RedBlue}, Generalized-Paxos~\cite{Lamport2005GeneralizedPaxos}, and Generic-Broadcast~\cite{Pedone99genericbroadcast}, 
+for supporting unordered execution of these operations and hence making
+the corresponding systems or protocols more scalable.
+
+The major drawback of these above systems is that operation commutativity is achieved
+at a cost, i.e., by either modifying existing application code or adopting
+a new programming model. Unlike these systems, 
+\tool\ instead offers the programmer a CRDT library and automatically 
+generates commutative shadow operations that encode side effects of every application operation at runtime, 
+requiring only a small amount of CRDT annotations
+specifying the merging semantics. This automation eases the burden on the programmer
+and eliminate errors of implementing these semantics, from application to application.
+
+%\allen{These papers do not logically make sense together.  CRDTs
+%  discuss how to make operations commute; RBC discusses how to
+%  coordinate sites and the order in which they can be applied.  I am
+%  not sure what Geo-transaction does.  Note that COPS, Eiger,
+%  transaction chaining, .... need to be included here as well.
+%  Additionally, the commutativity work from MIT at SOSP this year
+%  should be included.}
+%  
+%\nuno{commutativity work from MIT at SOSP has little to do with eventual
+%consistency - we could say something like:
+%Commutativity has also been explored in other settings for improving performance,
+%such as operating systems \cite{Clements13Scalable}. 
+%CRDTs \cite{Preguica2009CRDT,Shapiro11Conflict} extend solutions used in these
+%works by providing commutative design for a large number of useful data types,
+%including counters, set, maps, graphs.  }
+%
+%\allen{the connection between commutativity and scalability extends
+%  beyond eventual consistency to performance in multicore
+%  environments~\cite{Clements13Scalable}}
+%  
+% \nuno{I don't see how to integrate reference to this smoothly in the text...}
+
+\noindent\paragraph{Classification for multi-level consistency.}
+\tool\ is built on top of a two-level consistency model, in which
+operations execute under either strong or weak consistency. The primary goal of 
+\tool\ is to automatically assign appropriate consistency levels to various 
+operations so that state convergence and invariant preservation are ensured despite 
+having weakly consistent replication. The consistency level assignment problem has been
+studied in many recent multi-level consistency proposals. For example,
+relying on a probabilistic model, consistency
+rationing~\cite{Kraska2009ConsisRation} associates different
+consistency levels with different states, instead of operations, and
+allows states to switch from one level to another at runtime. Unlike
+this approach, we partition operations into strong and causal
+consistency groups. Pileus is a replicated key-value store,
+which trades off between consistency and latency requirements of read-only operations
+via consistency-based service level agreements (SLAs)defined by the user~\cite{Terry2013SLA}. 
+Different than Pileus, \tool\ does not restrict operation types. In addition,
+both RedBlue consistency~\cite{Li2012RedBlue} 
+and I-confluence~\cite{Bailis2014Avoid} define conditions that
+operations must meet in order to run under weak consistency, i.e.,
+without coordination. We build on this line of work and extend
+it so that an automatic tool, and not the programmer, is responsible
+for determining whether the operations meet these conditions.
+
+\noindent\paragraph{Automation.}
+To free programmers from manually making choices of consistency levels, 
+some researchers have attempted to apply program
+analysis techniques to reason about the consistency requirements
+of real applications. Alvaro et al.~\cite{Alvaro2011Bloom, Alvaro2014Blazes} identify code locations
+that need to inject coordination to ensure target consistency semantics, while Zhang
+et al.~\cite{Zhang2013TransactionChain} inspect read/write conflicts 
+across all operations. However, they merely focus on commutativity, and ignore application invariants, which
+are very important and taken into account by our solution. Instead
+of a fully static solution, we offer a dynamic and optimistic classification by combining a static analysis of 
+computing weakest preconditions for shadow operations and a runtime evaluation
+to determine operations to be strongly consistent if
+the corresponding conditions evaluate to {\tt FALSE}. 
+
+Very recently, the concept of warranties imposes a set of time-limited invariant-related assertions
+over shared objects in a replicated system, and allows transactions
+to commit without coordination if the relevant assertions
+are still valid~\cite{Liu2014Warranties}. Compared with warranties, preconditions in \tool\ 
+are logical formulas defined over parameters of shadow operations rather than system state. As a result,
+\tool\ is able to always perform condition checks locally, while warranties have to 
+invalidate assertions when updates are replicated or the expiration time reaches, and to delay updates 
+for make read-only transactions fast. 
+The work from Roy et al.~\cite{Roy2014Adaptive} resembles the concept of warranties and presents an
+ algorithm to analyze transaction code for producing warranties. That work is complementary to the goal of \tool\ 
+since we rely on a verification tool, Jahob~\cite{Kuncak2007Jahob}, to determine certain properties (encoded in
+weakest preconditions) of shadow operations.
+
+\noindent\paragraph{Other related work.} 
+Commutativity has been explored in other settings to improve
+performance and scalability -- e.g., in databases~\cite{Weihl1988Commutativity}
+and in OS design for multi-core 
+systems~\cite{Clements2013Scalable}.
+Program analysis techniques have also been used to 
+identify commuting code blocks. Aleen et
+al.~\cite{Aleen2009CommuteAnalysis} propose a new approach to find
+commutative functions automatically at compile time for allowing
+legacy software to extract performance from many-core
+architectures. Kim et al.~\cite{Kim2011CommuteVerification} used the
+Jahob verification system to determine commuting conditions under
+which two operations can execute in different orders. 
+Unlike these two prior solutions that only focus on identifying commutative
+code blocks, our tool automatically transforms operations
+by decoupling side effect generation and application, which makes more 
+operations commute~\cite{Li2012RedBlue}, and we also focus on determining
+invariant safety.
+
+
+%Unlike these two prior solutions, our tool automatically transforms operations to
+%be commutative using a set of CRDTs, and consequently, all transformed
+%operations are provably commutative and verification is no longer
+%needed. Another remarkable difference between the two proposals and
+%ours is that they identify commutativity as much as the code provides,
+%however, our tool is able to make more operations commutative.

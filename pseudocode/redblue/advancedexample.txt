@@ -1,0 +1,15 @@
+ func deposit' ( float money ){
+    balance = balance + money;
+ }
+ 
+ func withdrawAck' ( float money ){
+    balance = balance - money;
+ }
+ 
+ func withdrawFail' (){
+    /* no-op */
+ }
+ 
+ func accrueinterest' ( float delta ){
+    balance = balance + delta;
+ }

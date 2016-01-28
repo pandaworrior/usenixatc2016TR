@@ -1,0 +1,556 @@
+\section{Case studies}
+\label{ch:redblue:sect:casestudies}
+
+\begin{landscape}
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\multirow{3}{*}{Application}& \multicolumn{5}{c|}{Original} & \multicolumn{5}{c|}{RedBlue consistent extension}\\
+\cline{2-11}
+& \multirow{2}{*}{\specialcell{user\\requests}} & \multicolumn{3}{c|}{transactions} & \multirow{2}{*}{\specialcell{LOC}} & \multicolumn{4}{c|}{shadow operations} & \multirow{2}{*}{ \specialcell{LOC\\changed}}\\
+\cline{3-5} \cline{7-10}
+& & total & read-only & update & & \blue\ no-op & \blue\ update & \red\ & LOC &  \\
+\hline
+\hline
+TPC-W & 14 & 20 & 13 & 7 & 9k & 13 & 14 & 2 & 2.8k& 429\\
+RUBiS & 26 & 16 & 11 & 5 & 9.4k & 11 & 7 & 2 & 1k & 180 \\
+Quoddy & 13 & 15 & 11 & 4 & 15.5k & 11 &4  & 0 & 495 & 251\\
+\hline
+\end{tabular}
+\caption{Original applications and the changes needed to make them RedBlue consistent.}
+\label{tab:appOverviewCodeLines}
+\end{table*}
+\end{landscape}
+
+
+%% \begin{table*}[t]
+%% \centering
+%% \small
+%% \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|} 
+%% \hline 
+%% \multirow{4}{*}{Application}& \multicolumn{5}{c|}{Original} & \multicolumn{6}{c|}{RedBlue consistent extension}\\ 
+%% \cline{2-12}
+%% & \multirow{2}{*}{\specialcell{user\\requests}} & \multicolumn{3}{c|}{txns} & \multirow{2}{*}{\specialcell{LOC}} & \multicolumn{5}{c|}{shadow ops} & \multirow{2}{*}{ \specialcell{LOC\\changed}}\\
+%% \cline{3-5} \cline{7-11}
+%% & & total & read-only & update & & no-op & real & \blue\ & \red\ & LOC &  \\
+%% \hline
+%% \hline
+%% TPC-W & 14 & 20 & 13 & 7 & 9k & 13 & 16 & 27 & 2 & 2.8k& 429\\
+%% RUBiS & 26 & 16 & 11 & 5 & 9.4k & 11 & 9  & 18 & 2 & 1k & 180 \\
+%% Quoddy & 13 & 15 & 11 & 4 & 15.5k & 11 &4  & 15 & 0 & 495 & 251\\
+%% \hline
+%% \end{tabular}
+%% \caption{Original applications and the changes needed to make them RedBlue consistent.}
+%% \label{tab:appOverviewCodeLines}
+%% \end{table*}
+
+In this section we report on our experience in modifying three
+existing applications---the TPC-W shopping cart
+benchmark~\cite{TPC-Wv18}, the RUBiS auction benchmark~\cite{RUBiS},
+and the Quoddy social networking application~\cite{Quoddy}---to work with
+\RBc. The two main tasks to fulfill this goal are (1) decomposing
+the application original \operations\ into \initial\ and \shadow\ \operations\ and (2)
+labeling the \shadow\ \operations\ appropriately.
+
+\paragraph{Writing \initial\ and \shadow\ \operations.} 
+%\rodrigo{Added strategy for writing initials, please check.}  
+Each of the three case study applications executes MySQL data\-base
+transactions as part of processing user requests, generally one
+transaction per request. We map these application level transactions
+to the original \operations\ and they also serve as a starting point
+for the \initial\ \operations. For \shadow\ \operations, we turn each execution path in
+  the original \operation\ into a distinct \shadow\ \operation; an
+  execution path that does not modify system state is explicitly
+  encoded as a no-op \shadow\ \operation. When the \shadow\ \operations\ are in place, the
+ \initial\ \operation\ is augmented to invoke the appropriate
+ \shadow\ \operation\ at each path.
+
+\paragraph{Labeling \shadow\ \operations.}  
+Table~\ref{tab:appOverviewCodeLines} reports the number of
+transactions in the TPC-W, RUBiS, and Quoddy, the number of \blue\ and
+\red\ \shadow\ \transactions\ we identified using the
+  labeling rules in Section~\ref{sect:shadowbank}, and the application
+changes measured in lines of code. Note that read-only transactions
+always map to \blue\ no-op \shadow\ \operations.  In the rest of
+this section we expand on the lessons learned from making applications \RBct.
+
+
+ %old text before merging all tables
+%{Table~\ref{tab:appOverview} reports the number of transactions in the
+% three applications as well as the number of \blue\ and
+ %\red\ \shadow\ \transactions\ we identified.  The application
+ %changes measured in lines of code are reported in
+ %Table~\ref{tab:appCode}. In the rest of this section we expand on the
+ %lessons learned from our experience in making TPC-W, RUBiS, and
+ %Quoddy \RBct.}
+%\allen{Note: I'm requesting one table for the entire case studies
+%section. It may be a bit larger, but hopefully one is smaller than
+% many}
+%\daniel{I'm just suggesting the table you requested. Note that the text do not go into
+% details about what operations in TPC-W are red or blue, therefore I think
+% we could simply give the total of each instead of break down into what operations 
+% are red and blue. We are not listing the full set of operations anyways.}
+
+% Our experience showed that writing \shadow\ \transactions\ is easy; the total time
+% spent to modify the applications was five graduate-student work days
+% to understand the code bases and identify system invariants with
+% another three graduate-student days to implement the
+% modifications.
+\if 0
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+&\specialcell{user\\requests} & \specialcell{total \\txns} & \specialcell{read-only\\ txns} & \specialcell{update\\ txns} & \specialcell{\shadow\\ ops}\\
+\hline
+\hline
+TPC-W & 14 & 20 & 13 & 7 & 16\\
+RUBiS & 26 & 16 & 11 & 5 & 9\\
+Quoddy & 13 & 15 & 11 & 4 &4\\
+\hline
+\end{tabular}
+\caption{Applications and their \shadow\ \transactions.}
+\label{tab:appOverview}
+\end{table}
+\fi
+%In the rest of this section we expand on our experiences with these
+%applications. Our experience with these three case studies showed that
+%writing shadow transactions is easy; the experiments in
+%\S\ref{sect:eval} show the benefits of shadow operations and
+%\rbc\ for geo-replicated services.
+\if 0
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{|c|c|c|c|}
+\hline
+& \specialcell{original\\ LOC} & \specialcell{LOC\\changed} & \specialcell{\shadow\\ \transaction\ LOC}\\
+\hline
+\hline
+%TPC-W & 9k & 429 & 2.8k & 2 days / 7 days\\
+%RUBiS & 9.4k & 180 & 1k & 7h / 7 days\\
+%Quoddy & 14k & 2.1k & 533 & 5h / 1 day\\
+TPC-W & 9k & 429 & 2.8k\\
+RUBiS & 9.4k & 180 & 1k \\
+Quoddy & 15.5k & 251 & 495\\
+\hline
+\end{tabular}
+\caption{Modifications to TPC-W, RUBiS and
+  Quoddy.}
+\label{tab:appCode}
+\end{table}
+\fi
+%\begin{table}[h]
+%\centering
+%\begin{tabular}{|c|c|c|c|c|}
+%\hline
+%& \specialcell{original\\ LOC} & \specialcell{LOC\\changed} & \specialcell{shadow\\operation LOC} & \specialcell{time impl\\/discussions}\\
+%\hline
+%\hline
+%TPC-W & 9k & 429 & 2.8k & 2 days / 7 days\\
+%RUBiS & 9.4k & 180 & 1k & 7h / 7 days\\
+%Quoddy & 36.6k & 255 & 533 & 5h / 1 day\\
+%\hline
+%\end{tabular}
+%\caption{Modification effort for TPC-W, RUBiS, and Quoddy\cheng{Quantifying the time of writing shadow \transactions\ 
+%is not easy. I suggest that we say ``we spent a few days to write shadow transactions'' as we did before.}}
+%\label{tab:appCode}
+%\end{table}
+
+%Table~\ref{tab:appCode} summarizes the extent of changes and total
+%time required to modify TPC-W, RUBiS and Quoddy.  In the rest of this
+%section we expand on our experiences with these applications.
+
+\begin{figure}[H]
+\begin{minipage}[t]{0.495\columnwidth}
+\centering
+\subfloat[\textsf{Original transaction that commits changes to database.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/redblue/doBuyConfirmNoAddrOriginal.txt}
+\label{fig:doBuyConfirmOriginal}
+}
+\end{minipage}
+\hspace{2mm}
+\begin{minipage}[t]{0.495\columnwidth}
+\centering
+\subfloat[\textsf{\Initial\ \operation\ that manipulates data via a private \emph{scratchpad}.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/redblue/doBuyConfirmNoAddrGenerator.txt}
+\label{fig:doBuyConfirmGenerator}
+}
+\end{minipage}
+\\
+\begin{minipage}{0.495\columnwidth}
+\centering
+\subfloat[\textsf{Shadow doBuyConfirmIncre (\Blue) that replenishes the stock value.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/redblue/doBuyConfirmNoAddrShadow1.txt}
+\label{fig:doBuyConfirmShadowIncre}
+}
+\end{minipage}
+\hspace{2mm}
+\begin{minipage}{0.495\columnwidth}
+\centering
+\subfloat[\textsf{Shadow doBuyConfirmDecre (\Red) that decrements the stock value.}]{
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/redblue/doBuyConfirmNoAddrShadow2.txt}
+\label{fig:doBuyConfirmShadowDecre}
+}
+\end{minipage}
+\caption{Pseudocode for the product purchase transaction in TPC-W. For
+  simplicity the pseudocode assumes that the corresponding shopping
+  cart only contains a single item.}
+\label{fig:doBuyConfirm}
+\end{figure}
+
+\subsection{TPC-W}
+\label{ch:redblue:sect:casetpcw}
+
+TPC-W~\cite{TPC-Wv18} models an online bookstore. The application server
+handles 14 different user requests such as browsing, searching, adding
+products to a shopping cart, or placing an order.  Each user request
+generates between one and four transactions that access state stored
+across eight different tables. We extend an open source implementation
+of the benchmark~\cite{TPC-WFenix} to allow a shopping cart to be
+shared by multiple users across multiple sessions.  \if 0
+\begin{table}[t]
+\small
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+transaction& \red\ \shadow& \blue\ \shadow\\
+\hline
+\hline
+AdminUpdate&0&2\\
+\hline
+CreateEmptyCart&0&1\\
+\hline
+CreateNewCustomer&0&2\\
+\hline
+DoBuyConfirm&2&4\\
+\hline
+DoCart&0&4\\
+\hline
+RefreshSession&0&1\\
+\hline
+\end{tabular}
+\caption{TPC-W \shadow\ \transaction\ overview. 
+%% \allen{what is the difference
+%%     between the two dobuyconfirm? How do those relate to the
+%%     pseudocode?  What do these transactions do?  specifically, which
+%%     transaction adds items to a cart?}
+%% \cheng{I merged the two variants of doBuyConfirm transactions
+%% together, since they have very similar logics.}
+}
+\label{tab:tpcw-shadow}
+\end{table}
+\fi
+
+\paragraph{Writing TPC-W \initial\ and \shadow\ \operations.}
+%\allen{Meta-lesson from here:  multiple \shadow\ \operations\ per single transaction}
+
+Of the twenty TPC-W transactions, thirteen are read-only and admit
+no-op \shadow\ \operations. The remaining seven update transactions
+translate to one or more \shadow\ \operations\ according to the number
+of distinct execution paths in the original \operation.
+
+We now give an example transaction, {\tt doBuyCon\-firm}, which
+ completes a user purchase.  The pseudocode for the original
+ transaction is shown in Figure~\ref{fig:doBuyConfirm}\subref{fig:doBuyConfirmOriginal}.
+
+%old text before merging all tables
+%Of the twenty TPC-W transactions, thirteen are read-only and admit
+%no-op \shadow\ \operations. The remaining seven write transactions
+%translate to between one and four \shadow\ \operations\ each as shown in
+%Table~\ref{tab:tpcw-shadow}.
+%We now describe our experience in writing \shadow\ \operations\ for
+%TPC-W.  Due to lack of space, we restrict our attention to a single
+%example transaction, {\tt doBuyConfirm} which is responsible for
+%completing a user purchase.  The pseudocode for the original transaction is shown in Figure~\ref{fig:doBuyConfirmOriginal}.
+
+
+
+The {\tt doBuyConfirm} transaction removes all items from a shopping cart,
+computes the total cost of the purchase, and updates the stock value
+for the purchased items.  If the stock would drop below a minimum
+threshold, then the transaction also replenishes the stock.  The key
+challenge in implementing \shadow\ \transactions\ for {\tt doBuyCo\-nfirm} is
+that the original transaction does not commute with itself or any
+transaction that modifies the contents of a shopping cart.  Naively
+treating the original transaction as a \shadow\ \operation\ would force
+every \shadow\ \operation\ to be \red. 
+
+Figure~\ref{fig:doBuyConfirm}\subref{fig:doBuyConfirmGenerator} shows the \initial\ \operation\ of {\tt doBuyConfirm}, and Figures~\ref{fig:doBuyConfirm}\subref{fig:doBuyConfirmShadowIncre} and~\ref{fig:doBuyConfirmShadowDecre} depict the corresponding pair of \shadow\ \operations: {\tt doBuyConfirmIncre'} and {\tt doBuyConfirmDecre'}. The former \shadow\ \operation\ is generated when the stock falls below the minimum
+threshold and must be replenished; the latter is generated
+when the purchase does not drive the stock below
+the minimum threshold and consequently does not trigger the
+replenishment path.  In both cases, the 
+\initial\ \operation\ is used to determine the number of items purchased
+and total cost as well the \shadow\ \operation\ that corresponds to the
+initial execution. At the end of the execution of the \initial\ \operation\, these parameters and the chosen \shadow\ \operation\ are then propagated to other replicas.
+
+\paragraph{Labeling TPC-W \shadow\ \transactions.}
+For the 29 \shadow\ \transactions\ in TPC-W, we found that 27 can be \blue\ and only two
+must be \red. To label \shadow\ \transactions, we identified two key invariants that the
+system must maintain. First, the number of in-stock items can never
+fall below zero.  Second, the identifiers generated by the system
+(e.g., for items or shopping carts) must be unique.
+
+The first invariant is easy to maintain by labeling {\tt doBuyConfirmDecre'} (Figure~\ref{fig:doBuyConfirm}\subref{fig:doBuyConfirmShadowDecre}) 
+and its close variant {\tt doBuyConfirmAddrDecre'} \red. We observe that they are the only \shadow\ \operations\ in the system that
+decrease the stock value, and as such are the only \shadow\ \operations\
+that can possibly invalidate the first invariant.  Note that the
+companion \shadow\ \operation\ {\tt doBuyCon\-firmIncre'} (Figure~\ref{fig:doBuyConfirm}\subref{fig:doBuyConfirmShadowIncre}) \emph{increases} the stock level, and can never drive the stock count below zero, so it can be \blue.
+
+The second invariant is more subtle.  TPC-W generates IDs for
+objects (e.g., shopping carts, items, etc.) as they are created by the
+system. These IDs are used as keys for item lookups and consequently
+must themselves be unique. To preserve this invariant, we have to label many \shadow\ \transactions\ \red.  %If the identifier is generated in the \shadow\ \transaction, \shadow\ \transactions would have to execute in the same order in all replicas - i.e., they should be labeled blue. 
+This problem is well-known in database replication~\cite{Cecchet2008Middleware} and was circumvented
+by modifying  the
+%ID generation code, so that IDs become a pair $\langle
+%\textit{appproxy\_id ,seqnumber}\rangle$, which makes these transactions
+ID generation code, so that IDs become a pair $\mytuple{appproxy\_id,seqnumber}$, where $appproxy\_id$ denotes
+a globally unique proxy id across sites and $seqnumber$ denotes a counter managed by each proxy.
+This change makes these \transactions\
+trivially \blue, while not modifying application-specific semantics.
+
+%in a single server system is to  increment a counter each
+%time a new object is created.  Ensuring ID uniqueness with a simple
+%counter requires all \operations\ that create new IDs to be \red.  We
+%circumvent this difficulty by modifying  the
+% ID generation code, so that IDs become a pair $\langle
+% \textit{appproxy\_id,seqnumber}\rangle$.
+
+
+% \paragraph{Global unique id generation}
+% \allen{to become more tpc-w specific.  finish off with general lesson/pattern}
+
+% When we investigated the applications we want to apply the redblue
+% consistency to, we found that almost all applications require a simple
+% functionality: unique id assignment. Because all applications we
+% looked at are originally designed for a single server, the id
+% assignment code produces sequential ids by querying the highest id in
+% the table and incrementing it. Allowing this code to run in a
+% \blue\ transaction would violate the id uniqueness. To avoid running
+% these transactions as \red, we performed a minor modification to the
+% id generation code, so that ids become a pair $\langle
+% \textit{appproxy\_id,seqnumber}\rangle$.
+
+
+\subsection{RUBiS}
+\label{sect:caserubis}
+
+RUBiS~\cite{RUBiS} emulates an online auction website modeled after
+eBay~\cite{ebayUrl}. RUBiS defines a set of 26 requests that users can issue
+ranging from selling, browsing for, bidding on, or buying items directly,
+to consulting a personal profile that lists outstanding auctions and bids.  These 26 user
+requests are backed by a set of 16 transactions that access the
+storage backend.
+% 
+% \begin{table}[ht]
+% \centering
+% \small
+% \begin{tabular}{|c|c|c|}
+% \hline
+% transaction&blue shadow& red shadow\\
+% \hline
+% \hline
+% RegisterItem & 0 & 1\\
+% \hline
+% RegisterUser&1&0\\
+% \hline
+% StoreBid&0&3\\
+% \hline
+% StoreBuyNow&2&0\\
+% \hline
+% StoreComment&0&2\\
+% \hline
+% \end{tabular}
+% \caption{RUBiS Shadow op overview}
+% \label{tab:rubis-shadow}
+% \end{table}
+
+%\subsubsection{Writing RUBiS shadow transactions}
+%\cheng{need to shrink the size}
+Of these 16 transactions, 11 are read-only, and therefore trivially
+commutative. For the remaining 5 update transactions, we construct
+\shadow\ \transactions\ to make them commute, similarly to TPC-W. Each of
+these transactions leads to between 1 and 3 \shadow\ \operations.
+%as shown in Table~\ref{tab:rubis-shadow}.  
+The effort to write the \shadow\ \operations\ was nominal and mechanically very similar to our
+efforts with TPC-W.
+% Take the ``storeBid'' interation as an example. This interaction puts a bid on an item on the behalf of users by updating the total number of bids for the item and the max bid value. For this transaction, we construct three \shadow\ transactions corresponding to its execution paths. The basic strategy for ensuring commutativity is to repeat the action that increments the number of bits, and, for the variable that keeps track of the maximum bid, to repeat the logic of comparing against the current maximum and setting it if the new value is larger. While this logic commutes with itself without requiring changes, there is also the need to commute with all other transaction in order to be colored \blue. In particular, there is another transaction that buys the item for a given purchase price, which invalidates subsequent bids. To make both \shadow\ transactions commute, we again use a last writer wins strategy by associating a logical timestamp with the data, which determines their final order.
+
+
+%\subsubsection{Labeling RUBiS shadow transactions}
+Through an analysis of the application logic, we determined three invariants.
+First, that identifiers assigned by the system are unique.
+Second, that nicknames chosen by users are unique. Third, that item stock cannot fall below zero. 
+%In addition, if the system had provided an transaction to declare the winner of
+%an auction, an additional invariant would have been that only the highest
+%bidder would be declared the winner.
+Again, we preserve the first invariant using the global id generation
+strategy described in Section~\ref{ch:redblue:sect:casetpcw}. The second and third
+invariants require both {\tt RegisterUser'}, checking if a name submitted
+by a user was already chosen, and {\tt storeBuyNow'}, which decreases stock, to be
+labeled as \red.
+%The second invariant requires
+%one transaction to be labeled as blue. This is the ``Register User'' transaction, which
+%checks if a name submitted by a user was already chosen. The third invariant also requires one transaction to
+%be labeled as blue. This is the ``buyNow'' transaction, which checks if the purchase can complete,
+%depending on whether there are enough items in stock,
+%and subtracts the quantity that was purchased from the current
+%stock. The second and third transactions are intrinsically non invariant preserving
+%and therefore they were labeled as blue.
+
+We also found that the available version of RUBiS is not complete since it lacks of
+a real close auction operation, which declares the winner of each auction when
+its trading period ends. If such an operation existed, then there would be
+another invariant: the selected winners must be the users issuing highest accepted bids.
+It is very challenging to maintain this invariant while improving performance
+under the context of \RBCN. This is because the shadow operation {\tt storeBid'}---
+putting a bid on an open auction by updating the total number of bids 
+and the max bid value for that item --- would be labeled \red\ and is considered to be
+a common request in all RUBiS-like bidding systems.
+We will illustrate this challenge and the approach to overcome it in Chapter~\ref{chapter:por}.
+\subsection{Quoddy}
+\label{sect:quoddy}
+
+
+Quoddy~\cite{Quoddy} is an open source Facebook-like social networking
+site. Despite being under development, Quoddy already implements the most
+important features of a social networking site, such as searching for
+a user, browsing user profiles, adding friends,
+posting a message, etc.  These main features
+define 13 user requests corresponding to 15 different transactions.
+%Of these 15 transactions, only 4 are updating transactions, thus requiring
+%non-trivial \shadow\ \operations.
+Of these 15 transactions, 11 are read-only transactions, thus requiring
+trivial no-op \shadow\ \operations.
+%as shown in table~\ref{tab:quoddy-shadow}.
+
+Writing and labeling \shadow\
+\operations\ 
+for the 4 remaining transactions in
+Quoddy was straightforward. Besides reusing
+the recipe for unique identifiers, we only had to handle an automatic
+conversion of dates to the local timezone (performed by default
+by the database) by storing dates in UTC in all sites.
+In the social network
+we did not find system invariants to speak of;  we found
+that all \shadow\ \transactions\ could be labeled \blue.
+
+%Other issues that we have to address to port Quoddy to Gemini is that
+%the Quoddy software stack hides the communication with the storage
+%layer by implementing a Grails Object-Relational Mapping (GORM) model.
+%Therefore, in order to use our system we had to expose the database
+%communication, bypassing GORM for direct accessing the JDBC interface.
+%Such extension do not change the application semantics.
+%We conducted the evaluation against this extension of Quoddy (simply refered as Quoddy 
+%from this point on), and while we may lose optimization features like object 
+%caching at the proxy side, we also do not implement  cache at the proxy side, 
+%and therefore it is fair comparison since both implementations could benefit 
+%from the same optimizations.  
+
+%We encountered no surprises in writing and labeling shadow
+%\operations\ for Quoddy.  One special benefit of a social networking
+%site is that there are no system invariants to speak of;  we found
+%that all shadow \transactions\ could be labeled \blue.
+
+
+% \begin{table}[ht]
+% \centering
+% \small
+% \begin{tabular}{|c|c|c|}
+% \hline
+% transaction&blue shadow& red shadow\\
+% \hline
+% \hline
+% AddToFollow&0&1\\
+% AddToFriend&0&1\\
+% ConfirmFriend&0&1\\
+% UpdateStatus&0&1\\
+% \hline
+% \end{tabular}
+% \caption{Quoddy Shadow op overview}
+% \label{tab:quoddy-shadow}
+% \end{table}
+
+%% \begin{table}[t]
+%% \small
+%% \centering
+%% \begin{tabular}{|c|c|c|}
+%% \hline
+%% & \textbf{\Blue\  (\%)} &  \textbf{\Red\  (\%)} \\
+%% \hline
+%% \hline
+%% TPC-W shopping mix&  99.2 & 0.8 \\
+%% \hline
+%% TPC-W browsing mix &  99.52 & 0.48\\
+%% \hline
+%% TPC-W ordering mix & 93.6  & 6.4 \\
+%% \hline
+%% RUBiS bidding mix & 97.4 & 2.6 \\
+%% \hline
+%% \end{tabular}
+%% \caption{Proportion of \blue\ and \red\ \shadow\ \transactions\ in benchmarks at runtime.}
+%% \label{tab:mix}
+%% \end{table}
+
+
+\subsection{Experience and discussion}
+
+%% \paragraph{Prevalence of  \blue\ and \red\ \transactions} 
+%% After labeling \shadow\ \transactions, we ran the benchmarks to determine 
+%% the prevalence of each type of \transaction\ (\blue\ or \red). Table~\ref{tab:mix} 
+%% depicts the percentage of \blue\ and \red\ \shadow\ \transactions\ that are 
+%% executed in a benchmark run. The results show that both TPC-W and RUBiS 
+%% have a low prevalence of \blue\ \shadow\ \transactions. Furthermore, all \shadow\ \transactions\ 
+%% in Quoddy can be \blue. This confirms our expectation that most operations 
+%% that are executed can be \blue\ in realistic deployments.
+
+
+%% \paragraph{\Shadow\ \operations\ and invariants.} 
+%\nuno{suggest this over the next}
+Our experience sh\-owed that writing \shadow\ \transactions\ is easy;
+it took us about one week to understand the code, and implement and label
+\shadow\ \operations\ for all applications.
+%\changebars{the total time spent to modify the each of the applications was about one week  
+%to get familiar with code base, identify system invariants and implementing the changes. 
+%As the example showed Figure~\ref{fig:doBuyConfirm}, we found out the that 
+%in most cases the logic of \shadow\ \transactions\ is simple consisting only in
+%the updates from the corresponding original \transactions. }{}
+%\changebars{the total time spent to modify the each of the applications was about one week  
+%to get familiar with code base, identify system invariants and implementing the changes. 
+%As the example showed Figure~\ref{fig:doBuyConfirm}, we found out the that 
+%in most of the cases the logic of \shadow\ \transactions\ is simple, 
+%since their code is usually very similar to the corresponding \initial\ \transactions. 
+%}
+%{the total time spent to modify the applications was five graduate-student work days 
+%to understand the code bases and identify system invariants plus
+%another three graduate-student work days for implementing the changes. 
+%Many examples, including the one in Figure~\ref{fig:doBuyConfirm},
+%show that the logic of \shadow\ \transactions\ is simple, 
+%since their code is usually very similar to the corresponding \initial\ \transactions.} 
+%In some cases, a group of \shadow\ \transactions\ can even be mapped 
+%to a single \initial\ \transaction, instead of writing them all from scratch}
+%\cheng{not clear}
+%\daniel{I didnt understand it too. Cant we simply argue that 
+%we could use a  shadow operation in more than one generator operation, 
+%for instance the trivial no-op is used frequently therefore we dont neet to implement all from scratch?; 
+%perhaps we should clarify this in a discussion?}. 
+We also found that the strategy of generating a different \shadow\ \operation\ 
+for each distinct execution path is beneficial for two reasons. First, it leads to 
+a simple logic for \shadow\ \operations\ that can be based on operations that are 
+intrinsically commutative, e.g., \emph{increment/decrement}, \emph{insertion/removal}. 
+Second, it leads to a fine-grained classification of \operations, with more execution paths leading to \blue\ \operations.
+Finally, we found that it was useful in more than one application to
+make use of a standard
+last-writer-wins strategy to make \operations\ that overwrite part
+of the state commute.
+% \hl{need to describe something
+% like some invariants are not hard and not allowed to break. Breaking it is better, like id generation.}
+% We included the possibility to automatically use this standard \shadow\ \operation\ in the
+% system prototype we describe in \S\ref{sect:imple}.
+
+%In general, these problems are the same posed to database replication systems and a set of solutions to address them is known~\cite{Cecchet08Middleware}.

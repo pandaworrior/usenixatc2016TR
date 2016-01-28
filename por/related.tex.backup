@@ -1,0 +1,95 @@
+\section{Related work}
+\label{ch:por:sect:related}
+
+We summarize most relevant related work and compare it against our \PRCN\ framework in the following
+categories.
+
+\paragraph{Consistency models.} In the past decades, 
+many consistency proposals have been focusing on the reduction in coordination
+among concurrent operations to improve scalability 
+in replicated systems~\cite{Ladin1992LazyReplication,
+Sovran2011PSI, Li2012RedBlue, Li2014SIEVE, Alvaro2014Blazes, Alvaro2011Bloom, Zhang2015InconsRep}. 
+However, they only allow the programmer to choose from a limited number of
+consistency levels that they support, such as strong, causal or eventual consistency.
+Unlike these approaches, \PRCN\ offers a fine-grained tunable tradeoff
+between performance and consistency using the 
+visibility restrictions between pairs of operations to express consistency semantics. 
+Visibility restrictions are analogous to conflict relations in 
+Generic Broadcasting~\cite{Pedone99genericbroadcast}. Most recently, Gotsman et al. also 
+encoded the {\tt conflict relation} concept into 
+a proof system, which enables to analyze if consistency choices expressed into conflict relations
+meet the target properties~\cite{GotsmanConsistencyReason}. Our approach differs from this prior work 
+in that we provide programmers with the ability to infer a
+minimal set of (fine-grained) restrictions to achieve state convergence
+and invariant preservation. Furthermore, we could make use of the proposed proof system to
+prove if the restriction set identified by our work is minimal.
+
+In addition, most previous proposals~\cite{Alvaro2014Blazes, Ladin1992LazyReplication,
+Sovran2011PSI, Alvaro2011Bloom} only take into account operation commutativity
+to determine the need for coordination, instead of invariant preservation, which
+is analyzed in our solution. Bailis et al.~\cite{Bailis2014Avoid} proposed I-confluence
+to avoid coordination by determining if a set of transactions are I-confluent, i.e., they can be safely
+executed without coordination. Unlike this proposal, we take a less conservative approach by
+recognizing the fact that not all transactions in an non-I-confluent set must be coordinated, and by understanding 
+the minimal required coordination. Indigo~\cite{Balegas2015Eventual} defines consistency as 
+a set of invariants that must hold at any time, and presents a set of mechanisms to enforce these invariants 
+efficiently on the top of eventual consistency. Similar to Indigo, warranties~\cite{Liu2014Warranties} 
+map consistency requirements to a set of assertions that must hold in a given period of time,
+but it needs to periodically invalidate assertions when updates arrive. PoR consistency takes an alternative approach 
+by modeling consistency as restrictions over operations, and exploring
+the possiblity of using different coordination protocols to enforcing restrictions efficiently.
+
+\paragraph{Paxos and its variants.} State machine replication~\cite{Schneider1990RSM} is
+a standard technique to make a set of servers behave like a single machine.
+Paxos~\cite{Lamport1998Paxos}, one of the classic algorithms that implement state machines,
+forces every replica to process a set of requests in the same
+sequential order. In order to reduce the number of message exchanges for achieving distributed
+consensus, several variants of Paxos have been proposed. Fast Paxos~\cite{Lamport2006FastPaxos} aims
+at improving latency by allowing every replica to propose values but suffers from high latency when concurrent
+proposals occur. To avoid the penalty introduced by collisions, some other variants of Paxos explore 
+operation semantics to take into account a weaker guarantee that
+not all operations are needed to be totally ordered~\cite{Lamport2005GeneralizedPaxos, Moraru2013EPaxos}. 
+Generalized Paxos (GPaxos) allows replicas to execute a set of operations in
+different orders as long as operations commute w.r.t each other; however, it still has to resort to 
+the classic Paxos algorithm~\cite{Lamport1998Paxos} when the leader notices two concurrent non-commuting requests~\cite{Lamport2005GeneralizedPaxos}.
+Egalitarian Paxos (EPaxos) takes as input a set of pre-defined constraints, each of which defines an asymmetry dependency 
+between a pair of operations, and enables each replica to order two concurrent conflicting requests according
+to their apriori dependency relation~\cite{Moraru2013EPaxos}. 
+%EPaxos commits requests along either a fast or slow path. The fast path corresponds to one
+%round of communication, if a request is not con
+%icting with any other concurrent requests. If two requests are con
+%icting, due to the fixed ordering constraint, one request can
+%still be committed along the fast path, while the other request
+%must follow a slow path, where a second round of
+%communication between leader and participants is triggered
+%to enforce that all replicas to eventually learn that the slow
+%path request depends on the fast path one~\cite{Moraru2013EPaxos}.
+A major difference between our work and these Paxos variants is that we
+develop an analysis to extract pairs of conflicting operations by considering the impact of
+concurrent executions on achieving state convergence and invariant preservation. 
+Furthermore, all these protocols only reduce the number of communication steps, but
+still require to talk to a large quorum of replicas. In contrast, in our work,
+operations that are not confined by conflicting relations can be first accepted
+in a single replica and later asychronously replicated to other replicas.
+
+
+\paragraph{Efficient transaction processing.} Some other work focuses on how to reduce
+coordination in transaction processing. For example, transaction chopping~\cite{Shasha1995Chopping} and
+Lynx~\cite{Zhang2013TransactionChain} suggest that breaking large transactions into smaller pieces
+can improve performance, and they design analysis algorithms for chopping transactions
+without sacrificing serializibility. While this work has been done merely by checking
+conflicts in read/write sets between pairs of transaction pieces, we design a comprehensive
+and fine-grained analysis concerning commutativity
+and invariant preservation for avoiding coordination when possible. These techniques are also
+orthogonal to our proposal so that we can apply them to prune out the non-critical code sections prior
+to running our analysis. In addition, Roy et al. proposed to reduce inter-node communication
+for executing distributed transactions~\cite{Roy2015Homeostasis}. In contrast, we explore an alternative solution to improve
+system scalability by fully replicating state.
+%these solutions so that their spurious conflicts can be further reduced. Some other work takes an approach of
+%weakening isolation for transactions~\cite{Xie2014Salt}.
+
+%\paragraph{Efficient coordination.} Zookeeper?
+
+%\cheng{Missing points:  ~\cite{Roy2015Homeostasis}, ~\cite{Alvaro2011Bloom}, put into the main intro as well, ~\cite{Conway2012Logic}, ~\cite{Garcia-Molina1983Semantic} put into intro, ~\cite{Balegas2015FastInvariant}}
+
+

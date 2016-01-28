@@ -1,0 +1,5 @@
+func shd_storeBid2($bidId$, $itemId$, $bid$, $qty$, $L\_TS$){
+   exec(INSERT ($bidId$, $itemId$, $qty$, $maxBid$, $L\_TS$));
+   exec(UPDATE $item.nb\_of\_bids += 1$); 
+   exec(UPDATE $item.l\_ts = L\_TS $ WHERE $item.l\_ts <= L\_TS$);
+}

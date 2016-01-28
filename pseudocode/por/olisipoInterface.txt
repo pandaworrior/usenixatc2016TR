@@ -1,0 +1,11 @@
+//each permission consists of a set of operations
+Permission p; 
+
+//receive a set of operations that need to be watching on
+Permission getPermission(TxnId tid, String opName);
+
+//wait until the set of operations in the permission p have been applied
+void waitForBeingExecuted(TxnId tid, Permission p);
+
+//clean up all required resources for executing an operation
+void cleanUp(TxnId tid);

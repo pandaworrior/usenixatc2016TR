@@ -1,0 +1,333 @@
+\section{Generating shadow operations}
+\label{ch:sieve:sect:commute}
+
+This section covers how we automate the conversion of application code into commutative \emph{shadow operations}.
+
+%JLEITAO: Review text of the table later.
+\if 0
+\begin{table*}[t!]
+%\footnotesize
+\centering
+\begin{tabular}{|c|c|p{8cm}|}
+\hline
+Abstract types & Inherited types & Description \\
+\hline
+NUMDELTA & Integer, Double, Float, DateTime &
+  Its computation is either increment or decrement. Its commutative solution
+  is to apply a delta with the same type (either negative or positive) to itself.  \\ \hline
+LWW & Integer, Double, Float, DateTime, String &
+  LWW stands for last-writer-win. Among a set of concurrent operations
+  for the same data, only one of them will be deterministically selected
+  to install the final value. The selection depends on a total order.\\ \hline
+\multirow{4}{*}{SET} & AOSET & It is an add-only set, which only supports disjoint and non-concurrent
+          insertions.\\
+ \cline{2-3}
+&  UOSET & It is an update-only set, which only support concurrent updates.\\
+ \cline{2-3}
+&  AUSET & It is an add-and-update set, which supports unique insertion and concurrent updates.\\
+ \cline{2-3}
+&  ARSET & It is an add-and-remove set, which support concurrent insertions, updates
+            and deletes. Among concurrent insertions of the same data, only one insertion coming first will
+            succeed, and the rest of them will be translated into updates. Among concurrent updates of the same
+            data, only one will be deterministically selected to install the final value. Among concurrent
+            deletions of the same data, only one with highest ordering information will eventually remove the
+            data.\\
+\hline
+\end{tabular}
+\caption{Commutative replicated data types (CRDTs) supported by our type system}
+\label{tab:crdts}
+\end{table*}
+\fi
+
+%\subsection{Static component: leveraging CRDTs}
+\subsection{Leveraging CRDTs}
+
+% paragraph I - you are here, let's use DBs and CRDTs.
+%As mentioned in the previous section, w
+We leverage several observations
+and technologies to achieve a sweet spot between the need to capture the
+semantics of the original operation when encoding its side effects and
+the desire to minimize the amount of programmer intervention.
+First, we observe that many applications are
+built under a two-tier model, where all the persistent state of the
+service is stored in a relational database accessed through SQL commands.
+Second, we leverage CRDTs~\cite{Preguica2009CRDT}, which
+%, like other
+%operational transformation techniques~\cite{Sovran2011TranGeo}, % RIGHT REF: SPORC 
+construct operations that commute by design by encapsulating all side
+effects into a library of commutative operations.
+%in the literature, such as CRDTs~\cite{Preguica2009CRDT}, %Cset~\cite{Sovran2011TranGeo},
+%and Z-relation~\cite{Green09Reconcilable}. To transform transactions into shadow operations
+%we rely on CRDTs, and in particular we have implemented our own CRDT library that both
+%incorporates ideas of existing proposals and explicitly takes into account the typical needs of
+%the web applications. For completeness we present in Table~\ref{tab:crdts} the CRDTs 
+%types supported by our library.
+
+% II These two allow you to overcome one obstacle of CRDTs: rewriting code
+These two concepts allow us to achieve commutativity while overcoming
+the disadvantage of CRDTs, namely the need to adapt applications.
+This is because the state of two-tier applications is
+accessed through the narrow SQL interface, and therefore we can focus
+exclusively on adapting the implementation of SQL commands to access a
+CRDT. In particular, database tables can be seen as a set of tuples, and
+therefore all the calls in the original operation to add or remove
+tuples in a table can be replaced in the shadow operation with a CRDT set
+add or remove, which, in turn, is implemented on top of the
+database. 
+
+%The programmer only has to select the appropriate merging
+%strategy (i.e., the adequate CRDT type) to encode these operations, without
+%being required to program these CRDT transformations or to change the
+%code of each operation.
+
+%JLEITAO: Review text of the table later.
+% \begin{table}[t!]
+% \footnotesize
+% \centering
+% \begin{tabular}{|p{1.5cm}|p{2cm}|p{3cm}|}
+% \hline
+% Abstract type & Inherited type & Description \\
+% \hline
+% LWW (FIELD) & Integer, Double, Float, DateTime, String&  Uses last-writer-wins to solve concurrent updates\\\hline
+% NUMDELTA (FIELD) & Integer, Double, Float, DateTime  &  Add a delta to the value \\\hline
+% \multirow{4}{*}{SET} & AOSET,                       UOSET,                AUSET,              ARSET & For concurrent operations,
+% higest timestamp wins. Insert is translated to an
+% update if the record exists.\\
+% \hline
+% \end{tabular}
+% \caption{Commutative replicated data types (CRDTs) supported by our type system.}
+% \label{tab:crdts}
+% \end{table}
+
+% \begin{table}[t!]
+% \footnotesize
+% \centering
+% \begin{tabular}{|p{1.5cm}|p{2cm}|p{3cm}|}
+% \hline
+% SQL type & CRDT & Description \\
+% \hline
+% \multirow{3}{*}{FIELD*} & \multirow{2}{*}{LWW} &  Use last-writer-wins to solve concurrent updates\\\cline{2-3}
+%  & \multirow{2}{*}{NUMDELTA}  &  Add a delta to the numeric value \\\hline
+% \multirow{4}{*}{TABLE} & AOSET,                       UOSET,                AUSET,              ARSET & Declare accepted mutations
+% for a table, and merge concurrent inserts, updates or deletes on demand\\
+% \hline
+% \end{tabular}
+% \caption{Commutative replicated data types (CRDTs) supported by our type system. *
+% FIELD covers primitive types such as integer, float, double, datetime and string.}
+% \label{tab:crdts}
+% \end{table}
+
+
+\begin{table}[t!]
+%\small
+\centering
+\begin{tabular}{|>{\centering\arraybackslash}m{1.2in}|>{\centering\arraybackslash}m{0.8in}|>{\centering\arraybackslash}m{1.9in}|}
+\hline
+SQL type & CRDT & Description \\
+\hline
+\hline
+\multirow{3}{*}{FIELD*} & LWW &  Use last-writer-wins to solve concurrent updates\\\cline{2-3}
+ & NUMDELTA  &  Add a delta to the numeric value \\\hline
+TABLE & AOSET,                       UOSET,                AUSET,              ARSET & Sets with restricted operations (add, update, and/or remove).
+Conflicting ops.\ are logically executed by timestamp order.\\
+\hline
+\end{tabular}
+\caption{Commutative replicated data types (CRDTs) supported by our type system. *
+FIELD covers primitive types such as integer, float, double, datetime and string.}
+\label{tab:crdts}
+\end{table}
+
+% III However, there is some semantic that needs programmer - eg
+However, it is impossible to completely remove the programmer from the
+loop, due to the choice of which CRDT to use for encoding appropriate merging
+semantics. For instance, when an integer field of a tuple is written
+to in a SQL update command, the programmer could have two different
+intentions in terms of what the update means and how concurrent
+updates should be handled: (1) the update can represent a delta to be
+added or subtracted from the current value (e.g., when updating the
+stock of a certain item), in which case all concurrent updates should
+be applied possibly in a different order at all replicas to ensure that no stock
+changes are lost, or (2) it can be overwriting an old value with a new
+value (e.g., when updating the year of birth in a user profile), in
+which case an order for these updates should be arbitrated, and the last
+written value should prevail. Even though both strategies ensure
+state convergence, their semantics differ significantly. For example,
+the second strategy leads to a final state that does not reflect the effects
+of all update operations.
+%In CRDT terms, this semantic information
+%is encoded as the use of different data types.
+
+% IV We address this using simple annotations to schema.
+% V - some details, not too many please
+Since the appropriate merging strategy is application-specific,
+the programmer has to convey this decision.
+To minimize this input, we only require the programmer to select the appropriate merging
+strategy (i.e., the adequate CRDT type) to encode these operations rather than programing these CRDT transformations or changing the
+code of each operation. In more detail, we provide programmers a number of CRDT types (shown in Table~\ref{tab:crdts}),
+and they should declare which types to use on a per-table and per-attribute basis. These
+types form two categories: field, which is the smallest component of 
+a record and defines its commuting update operation in the presence of
+concurrency, and set, which is a collection of such records plus the support 
+for commutative appending or removing. Programmers only need to annotate 
+the data schema with the desired CRDT type using the following
+annotation syntax:
+
+\begin{equation} 
+@[CRDT Name] [Table Name | Data Field Name]
+\end{equation} 
+
+\begin{figure}[t]
+\centerline{\small\begin{tabular}{l}
+\sf  \underline{\bf@AUSET} CREATE TABLE exampleTable (
+\\\sf~~~~  objId INT(11) NOT NULL,
+\\\sf~~~~  \underline{\bf@NUMDELTA} objCount INT(11) default 0,
+\\\sf~~~~  \underline{\bf@LWW} objName char(60) default NULL,
+\\\sf~~~~  PRIMARY KEY (id)
+\\) ENGINE=InnoDB
+\end{tabular}}
+\caption{Annotated table definition schema.}
+\label{fig:annoSql}
+\end{figure}
+
+Figure~\ref{fig:annoSql} presents a sample annotated SQL table creation
+statement. 
+We assign \texttt{exampleTable} the type \texttt{AUSET} (Append-Update Set),
+a CRDT set that only allows append and update operations, thus
+precluding the concurrent insertion and deletion of the same item %, which require
+%semantic information to merge 
+(less restrictive CRDT sets also exist).
+The field \texttt{objCount} associated with \texttt{NUMDELTA} always
+expects a delta value to be added or subtracted to its current value. 
+By default, if no annotations are provided, we conservatively
+mark the corresponding table or 
+field to be read-only.
+
+\subsection{Runtime creation of shadow operations}
+
+With these schema annotations in place, it is easy to generate
+commutative shadow operations at runtime. The idea is to invoke the
+original operation upon the arrival of a new user request (as would
+happen in a system that does not make use of shadow operations) but
+with the difference that all the calls to execute commands in the
+database are intercepted by a modified JDBC driver that builds the
+sequence of CRDT operations that comprise the shadow operation as the
+original operation progresses. Furthermore, using the schema
+annotations, \tool\ maps each database update to an
+appropriate merge semantics and replaces the operations on a certain table or field
+with the appropriate operations over the corresponding CRDT type.
+
+For instance, to create a shadow operation for a transaction that
+updates \texttt{objCount} in Figure~\ref{fig:annoSql},
+when an update is invoked, we first query the old value $s$,
+and then, given  the new value
+$s'$, we compute a \texttt{delta} by subtracting $s$ from
+$s'$. Finally, we use \texttt{delta} and the primary key $pk$ of
+the corresponding object to parameterize
+a CRDT operation that reads the tuple
+identified by $pk$ and then adds \texttt{delta} to it.
+%. When replicating this shadow
+%operation, we always adds \texttt{delta} to the database
+%record specified by $pk$.
+
+% to automatically transform the side effects of the application
+% code into shadow operations that are commutative by design.
+
+%To enable the automatic transformation of transactions into (commutative) shadow operations, we require
+%programmers to provide simple annotations over the database schema, which indicate which CRDS type
+%should be used to manipulate each data object. 
+
+\if 0
+Additionally, to ensure that shadow operations are commutative we also eliminate all sources
+of non-determinism that might exist in the operation code, which could lead to state divergence
+when executing the shadow operations. This is achieved by transparently encoding deterministic
+values into CRDTs whenever sources of non-determinism are used. For example, if some transaction relies
+on the current time, we simply replace the call that provides this value, with a static value obtained
+at the creation of the shadow operation. If an updating operation does not specify the primary key, 
+we first perform a select to fetch a list of primary keys from the set of records matching the
+condition, and then encode the primary keys along the updating semantics.
+\fi
+
+%% {\em [There are here some details that distinguish between the conversion in the static component
+%% of the tool, and at run time. However it is unclear if at this point the reader already dominates these 
+%% concepts enough to be able to understand this. -- Must be solved!!!]}
+%% The only
+%% difference between the runtime and static fronts is that the static transformation
+%% translates a snippet of code into a sequence of CRDT operations, while the counterpart
+%% at runtime intercepts every SQL statement execution,
+
+Finally, when the original operation issues a commit to the database,
+the tool outputs a shadow operation containing the accumulated
+sequence of CRDT operations.
+
+%% \begin{figure*}[b!]
+%% \begin{subfigure}[Original sql schema]{
+%% \begin{minipage}[b]{0.5\textwidth}
+%% \lstinputlisting{./code/sqlSchema.txt}%                                                                                                                                                          
+%% \label{fig:originalSql}
+%% \end{minipage}
+%% }
+%% \end{subfigure}
+%% \hspace{0.4cm}
+%% \begin{subfigure}[Annotated table definition schema]{
+%% \begin{minipage}[b]{0.5\textwidth}
+%% \lstinputlisting{./code/annoSqlSchema.txt}%                                                                                                                                                      
+%% \label{fig:annoSql}
+%% \end{minipage}
+%% }
+%% \end{subfigure}
+
+%% \caption{Annotation example.}
+%% \label{fig:annoSqlExample}
+%% \end{figure*}
+
+\subsection{Miscellaneous}
+
+In this part, we discuss a few interesting aspects related to the commutativity
+conversion.
+
+\paragraph{Treatment of non-deterministic SQL statements.} 
+In addition to the previously described logic to construct commutative shadow operations,
+we also eliminate all sources of non-determinism that might exist in the operation code, which could lead to state divergence
+when executing the shadow operations. This is achieved by transparently encoding deterministic
+values into CRDTs whenever sources of non-determinism are used. For example, if some transaction relies
+on the current time, we simply replace the call that provides this value, with a static value obtained
+at the creation of the shadow operation. Some queries update or delete
+records when these records match a certain condition rather than specifying the primary keys.
+With regard to this case, we first perform a select to fetch a list of primary keys from the set of records matching the
+condition, and then encode the primary keys along the updating semantics.
+
+%There exist a few non-deterministic
+%updating queries, which may introduce different side effects if they are applied
+%against different system states. The simplest example is an update query
+%invoking database functions to get non-deterministic inputs, such as $NOW()$,
+%$CURRENT\_TIMESTAMP$ and etc. More complex, an UPDATE query embedded with a
+%SELECT statement changes state with the value read by the SELECT. One another
+%example is to delete or update all records from a table where these records
+%match a certain condition. In these two cases, we have to first change these
+%queries into deterministic. To do so, we force the transaction to fetch the
+%non-deterministic state before performing updates, and the non-deterministic
+%state will be encoded into the corresponding shadow operations. For the update
+%example, the non-deterministic state must be the state read from the embedded
+%selection. Regarding the delete or update example, the non-deterministic state
+%is the list of records matching the specified condition when the transaction is
+%executed.
+
+%\paragraph{Unique identifier generation.} {\tt auto\_increment} is
+%a powerful and wide-deployed database built-in technique for generating
+%unique identifiers without invoking an additional selection to determine
+%the next available identifier. This technique explicitly define an invariant that no
+%two identifiers are identical. To maintain this invariant, we have to label as red
+%all shadow operations in which a newly inserted record having an {\tt auto\_increment} attribute. 
+%To overcome this problem, we provide a
+%generic unique id generation function, which will automatically produce globally
+%unique id without coordination with other sites. 
+
+\paragraph{Annotation suggestion.} We found that it would be possible to
+effectively recommend a few commutative types to programmers, by statically
+analyzing the application code, or the SQL queries, or both. For example, if a
+data field is always modified by an assignment statement, then a $LWW$ solution
+may be suitable for it. If a data field is manipulated via either addition or
+subtraction, then the $NUMDELTA$ is a good CRDT candidate. Furthermore, if a table is
+never modified by a delete query, then we would suggest it to be tagged as an
+AUSET (Add-Only set). We leave this optimization to our future work.
+

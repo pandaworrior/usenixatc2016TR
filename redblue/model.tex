@@ -1,0 +1,72 @@
+\section{System model}
+\label{chapter:model}
+ We assume a distributed system with state fully rep\-licated across
+ $k$ sites denoted $\textit{site}_0\ldots \textit{site}_{k-1}$.  We
+ follow the traditional deterministic state machine model, where there
+ is a set of possible states $\mathcal{S}$ and a set of possible
+ \operations\ $\mathcal{O}$, each replica holds a copy of the current
+ system state, and upon applying an \operation\ each replica
+ deterministically transitions to the next state and possibly outputs
+ a corresponding reply.  \allen{expand on the following in a TR}
+ \changebars{}{For uniformity, we treat the output as a separate part
+   of the replica state.}
+
+In our notation, $S\in\mathcal{S}$ denotes a system state, and
+$u,v\in\mathcal{O}$ denote operations.\ We assume there
+exists an initial state $S_0$.  If operation $u$ is applied against
+a system state $S$, it produces another system state $S'$;
+%jg10 changed this
+we will also denote this by $S'=S+u$.
+%which we denote by $S+u=S'$. 
+We say that a pair of \transactions\ $u$ and $v$ 
+{\em commute} 
+%jg10: Definitions do not need an iff
+if $\forall S \in \mathcal{S},S+u+v=S+v+u$.
+%jg10: Do not need ``In addition''
+%In addition, t
+Given a total order $T(U, <)$ over a
+set of operations $U$, if we apply
+all operations $U$ against a system state $S$ according
+to $<$, we denote the final state by $S(T)$. $S(T) = $
+$S+u_{0} + u_{1} + ... + u_{i} + ... + u_{|U|-1}$, where $\forall i, 0<=i<|U|$. 
+The system maintains a set of application-specific
+invariants. We define the primitive $\textit{valid}(S)$ to be {\it
+  true} if state $S$ satisfies all these invariants and {\it false}
+otherwise. We say an operation $u$ is {\it correct} if for any
+valid state $S$, $S+u$ is also valid.
+%jg10: Do not need ``Finally''
+%Finally, 
+%jg10: Also changed this sentence
+Each \operation\ $u$ is initially submitted at one site which we
+call $u$'s \emph{primary site} and denote $\textit{site}(u)$;
+%jg10: Added this sentence
+the system then later replicates $u$ to the other sites.
+%Each \operation\ $u$ is associated with a unique primary site
+%$\textit{site}(u)$ where $u$ was submitted.
+
+
+\allen{We could drop this paragraph for space --- the discussion is
+  now in the architecture section.}  
+%new
+\changebars{} 
+%old
+{
+%\paragraph
+{ Failure modes} In the description of our new consistency model and
+of the implementation of the system, for simplicity, we assume that
+individual nodes obey their expected behaviors, and we do not consider
+node crashes or network failures.  Our focus in this paper is in
+understanding what should be the specification for a replicated system
+that works well when concurrent \operations\ are executed by clients
+in different sites, and how to make the best possible use of that
+specification.  We present a brief discussion on how to implement that
+specification in a fault-tolerant way in \S \ref{sect:handleFaults}.
+}
+%done
+
+
+
+
+
+
+

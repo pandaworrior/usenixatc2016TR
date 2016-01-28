@@ -1,0 +1,7 @@
+on rcv @\commitShadowMess{$shdOp$}{$logicalTS$}@ from @\coordinator@:
+   while($logicalTS$ not strictly follows $lastTS$);
+   foreach $op$ $\in$ $shdOp.opSet$:
+      call @\storage@ to execute $op$; //doing in batch
+   call @\storage@ to make updates visible;
+   $lastTS = logicalTS$;
+          

@@ -1,0 +1,6 @@
+func newCart(){
+  cartId = getUniqueId();
+  //add cartId to private copy
+  ts = getCommitOrder();
+  commit(shdNewCart, cartId);
+}

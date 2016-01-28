@@ -1,0 +1,18 @@
+on rcv request from user:
+   - execute initial op through scratchpad
+   - send commitRequest to sequencer
+        + shadow op id
+	+ shadow op parameters
+	+ initial op read set with time stamp
+	+ initial op write set
+   - discard scratchpad
+        ** optimization to possibly reuse temp table
+	     in absence of conflicts?
+
+on rcv abort from sequencer
+   -  return abort/retry op/ ????
+
+on rcv commit from sequencer
+   - take note of commit sequence number
+   - respond to user
+     

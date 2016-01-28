@@ -1,0 +1,1 @@
+shd_confirmFriendNOOP(){//do nothing}

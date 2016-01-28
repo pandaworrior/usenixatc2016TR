@@ -1,0 +1,196 @@
+\begin{landscape}
+\begin{table*}[t!]
+\centering
+\footnotesize
+\begin{tabular}{c|c|c|c|c|c|c||c}
+\hline
+\specialcell{Consistency \\level} & Example systems & \specialcell{Immediate \\response} & \specialcell{State \\convergence} &  \specialcell{Single \\value} & \specialcell{General \\operations}  & \specialcell{Stable\\histories}& \specialcell{Classification \\strategy}\\
+\hline
+Strong & RSM~\cite{Lamport1978Time,Schneider1990RSM}                & no  & yes  & yes & yes & yes        & N/A\\
+\hline
+\specialcell{Timeline/\\snapshot} & \specialcell{PNUTS~\cite{Cooper2008PNUTS}, \\Megastore~\cite{Baker2011Megastore}}            & reads only  & yes & yes & yes & yes & N/A\\
+\hline
+Fork & SUNDR~\cite{Krohn2004Sundr}                                               & all ops & no  & yes  & yes & yes        & N/A\\
+\hline
+\multirow{3}{*}{Eventual}
+& Bayou~\cite{Terry1995Managing}, Depot~\cite{Mahajan2010Depot} & all ops    & yes & no  & yes & yes         & N/A \\
+                                   &  Sporc~\cite{Feldman2010Sporc}, CRDT~\cite{Shapiro2011Conflict}                 & all ops       & yes & yes & no & yes          & N/A \\
+                                   & Zeno~\cite{Singh2009Zeno}, COPS~\cite{Lloyd2011Causal}  & weak/all ops      & yes & yes  & yes & no         & no / N/A\\
+\hline
+\multirow{2}{*}{\specialcell{Multi}}   
+                                  
+                                   & PSI~\cite{Sovran2011PSI}                        & cset         & yes & yes & partial & yes & no\\
+                                   &lazy repl.~\cite{Ladin1992LazyReplication}, Horus~\cite{VanRenesse1996Horus}          & immediate/causal ops & yes & yes & yes & yes         & no\\
+\hline
+\RB\     & \gemini       & \Red\ ops & yes & yes & yes & yes & yes \\
+\hline
+\end{tabular}
+\caption{Tradeoffs in geo-replicated systems and various consistency
+  levels.}
+\label{table:systemcompare}
+\end{table*}
+\end{landscape}
+
+\section{Related work}%\pagelimit{1.5}}                                                    
+\label{ch:redblue:sect:related}
+\if 0
+\paragraph{Target end-to-end properties.}
+To frame the discussion of existing systems that may be used
+for geo-rep\-li\-cat\-ion, we start by informally stating some
+desirable properties that such solutions should support.\ The first property consists of ensuring a good user experience by
+providing \textbf{low latency} access to the
+service~\cite{Schurman2009latency}. Providing low latency access implies
+that \operations\ should proceed after contacting a small number of
+replicas, but this is at odds with other requirements that are often sacrificed by consistency
+models that privilege low latency. The first such requirement is preserving
+\textbf{caus\-al\-ity}, both in terms of the monotonicity of user requests
+within a session and preserving causality across clients, which is key
+to enabling natural semantics~\cite{Petersen1997Flexible}.  Second, it
+is important for all \operations\
+executed at one replica to be
+propagated to all remaining replicas, a property we call
+\textbf{eventual propagation}.\ Third, it is important that all
+replicas that have executed the same set of \operations\ are in the
+same state, i.e., that they exhibit \textbf{state convergence}; otherwise a quiescent system would return different views of the state
+depending on which replicas the users connected to. Fourth, we also
+want to avoid marked deviations from the conventional, single server
+semantics. In particular, \operations\ should return a \textbf{single
+  value}, precluding solutions that return a set of values
+corresponding to the outcome of multiple concurrent updates; the
+system should provide a set of \textbf{stable histories}, meaning that
+user actions cannot be undone; and it should provide support for
+\textbf{general \operations}, not restricting the type of
+\transactions\ that can be executed.  Finally, the behavior of the
+service must obey a service-dependent specification, which may be
+defined as a set of \textbf{invariants} that must be preserved.
+\fi
+
+In this section, we compare several proposals of consistency definitions against our work
+by analyzing which set of end-to-end properties described in Chapter~\ref{chapter:sysmodel} they offer.
+Table~\ref{table:systemcompare} shows that different proposals strike different balances between
+these target properties. While other consistency
+definitions exist, we focus on the ones most closely related to the
+problem of offering fast and consistent responses in geo-replicated
+systems.
+
+\paragraph{ Strong vs.\ weak consistency.}
+On the strong consistency side of the spectrum there are definitions
+like linearizability~\cite{Herlihy1990Linearizability}, where the
+rep\-li\-cated system behaves like a single server that
+serializes all \operations.\ This, however, requires coordination among rep\-li\-cas
+to agree on the order in which \operations\ are executed, with the
+corresponding overheads that are amplified in
+geo-rep\-li\-ca\-tion scenarios. Somewhat more efficient are
+timeline consistency in PNUTS~\cite{Cooper2008PNUTS} and
+snapshot consistency in Megastore~\cite{Baker2011Megastore}. These
+systems ensure that there is a
+total order for updates to the service state, but give the option
+of reading a
+consistent but dated view of the service. %new
+Similarly, Facebook has a primary site that handles updates
+and a secondary site that acts as a read-only copy~\cite{Li2012Practical}.
+This allows for fast reads executed at the closest site but writes still pay a penalty for serialization.  
+%% These solutions provide fast reads but can result in degraded update
+%% performance in situations, like social networking or online shopping
+%% services, where a partitioning of the writers of each data item or
+%% each group of data items is not easily achievable.
+%% %% megastore and pnuts totally order writes but allow for stale reads
+%%  The
+%% Megastore~\cite{Baker11Megastore} system used by Google uses a
+%% modified version of Paxos, requiring all replicas to be contacted
+%% during write operations, but enables fast reads at a single replica;
+%% % (and thus requires contacting a quorum
+%% %of replicas) to serialize write \operations, but
+%% %enables reads to read a consistent but dated view from a single replica.
+%% \changebars{like PNUTS, this does not allow for fast writes.}{this has same benefits and drawbacks as PNUTS.}
+%\rodrigo{Removable:} This system has the additional characteristic of grouping related
+%data items in entity groups, and providing full ACID
+%semantics within entity groups but lower consistency guarantees across
+%the entity boundary. 
+Fork consistency~\cite{Krohn2004Sundr, Mazieres2002Fork} addresses
+the performance limitations of strong consistency by allowing users to
+observe distinct causal histories.  The primary drawback of fork
+consistency is that once replicas have forked, they can never be
+reconciled.  Such approach is useful when building secure systems
+but is not appropriate in the context of geo-replicating a single
+service.
+
+Eventual consistency~\cite{Terry1995Managing} is on the other end of the
+spectrum. Eventual consistency is a catch-all phrase that covers any
+system where replicas may diverge in the short term as long as the
+divergence is eventually repaired and may or may not include
+causality.  (See Saito and Shapiro~\cite{Saito2005Optimistic} for a
+survey.)  In practice, as shown in Table~\ref{table:systemcompare},
+systems that embrace weak consistency (e.g., eventual or causal consistency) have limitations. Some
+systems waive the stable history property, either by rolling back
+\operations\ and re-executing them in a different order at some of the
+replicas~\cite{Singh2009Zeno}, or by resorting to a last writer wins
+strategy, which often results in loss of one of the
+  concurrent updates~\cite{Lloyd2011Causal}.  Other systems expose multiple values from
+divergent branches in \operations\ replies either directly to the
+client~\cite{Mahajan2010Depot,Decandia2007Dynamo} or to an
+application-specific conflict resolution
+procedure~\cite{Terry1995Managing}.  Finally, some systems restrict
+\operations\ by assuming that all \operations\ in the system
+commute~\cite{Feldman2010Sporc,Shapiro2011Conflict}, which might require
+the programmer to rewrite or avoid using some \operations.
+
+\paragraph{Coexistence of multiple consistency levels.} The solution we propose for addressing the tension between low latency
+and strongly consistent responses is to allow different
+\operations\ to run with different consistency
+levels. Existing systems that used a similar approach include
+Horus~\cite{VanRenesse1996Horus}, lazy replication~\cite{Ladin1992LazyReplication}, Zeno~\cite{Singh2009Zeno}, and
+PSI~\cite{Sovran2011PSI}. However, none of these proposals guide the
+service developer in choosing between the available consistency
+levels.  In particular, developers must reason about wheth\-er their
+choice leads to the desired service behavior, namely by ensuring that
+invariants are preserved and that replica state does not diverge.
+This can be challenging due to difficulties in identifying behaviors
+allowed by a specific consistency level and understanding the
+interplay between \operations\ running at different levels.  Our
+research addresses this challenge, namely by defining a set of
+conditions that precisely determine the appropriate
+  consistency level for each operation.
+
+\paragraph{Other related work.} Consistency rationing~\cite{Kraska2009ConsisRation} allows consistency
+guarantees to be associated with data instead of \operations, and the
+consistency level to be automatically switched at runtime between
+weak consistency and serializability
+based on specified policies.\ TACT~\cite{Yu2000TACT} consistency
+bounds the amount of inconsistency of data items in an
+application-specific manner, using the following metrics: numerical
+error, order error and staleness. In contrast to these models, the
+focus of our work is not on adapting the consistency levels of
+particular data items at runtime, but instead on systematically
+partitioning the space of \transactions\ according to their actions
+and the desired system semantics.
+
+One of the central aspects of our work is the notion of
+\shadow\ \transactions, which increase \operation\ commutativity by
+decoupling the decision of the side effects from their application to the state.
+%This enables applications to make more use of fast \transactions. 
+Some prior work also aims at increasing operation commutativity: Weihl exploited
+com\-mut\-at\-iv\-ity-based concurrency control for abstract data types~\cite{Weihl1988Commutativity}; 
+operational transformation~\cite{Ellis1989Concurrency,Feldman2010Sporc} extends
+non-co\-mmutative \operations\ with a
+transformation that makes them commute; Conflict-free Replicated Data
+Types (CRDTs)~\cite{Shapiro2011Conflict} design \operations\ that
+commute by construction; Gray~\cite{Gray1981NestedTransactions} proposed
+an open nested transaction model that uses commutative compensating
+transactions to revert the effects of aborted transactions without
+rolling back the transactions that have seen their results and already
+committed; delta transactions~\cite{deltaTxBlog} divide a transaction
+into smaller pieces that commute with each other to reduce the
+serializability requirements.  Our proposal of
+\shadow\ \transactions\ can be seen as an extension to these concepts,
+providing a different way of broadening the scope of potentially commutative
+\transactions. There exist other proposals that also decouple the
+execution into two parts, namely two-tier
+replication~\cite{Gray1996Dangers} and CRDT
+downstreams~\cite{Shapiro2011Conflict}. In contrast to these proposals, for
+  each \operation, we may generate different
+  \shadow\ \operations\ based on the specifics of the execution,
+which can run under different consistency levels. As a result, the decomposition enables a
+dynamic runtime classification of consistency levels, and
+allows applications to make more use of fast \operations.
+

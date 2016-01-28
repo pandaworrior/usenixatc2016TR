@@ -1,0 +1,38 @@
+\section{Limitations and future work}
+\label{ch:por:sect:limit}
+
+While adapting applications to use \PRCN\ and \coordtool\ significantly outperforms
+the usage of \RBCN\ and \tool, there are several interesting avenues for future work:
+
+First, there might exist some restrictions which are not necessary to be symmetry. We have not
+explored the existence of asymmetry restrictions, and not assessed the impact of having asymmetry
+restrictions on the coordination cost. We leave this exploration to our future work.
+
+Second, the adoption of \PRCN\ requires the programmer to manually execute the sequence
+of algorithms for analyzing possibility of diverging state or violating invariants, in order to
+obtain the minimal set of restrictions. To free this programming burden, we plan to develop
+an automatic tool, which implements all these algorithms.
+
+Third, the current implementation of \coordtool\ only embraces two different coordination
+protocols, each of which is suitable for a certain workload. In future, we plan to incorporate
+more efficient coordination protocols into \coordtool\ so that the programmer can make a better
+choice.
+
+Fourth, we plan to plugin an agent into \coordtool, which dynamically measures
+the frequencies of different operations and makes runtime decisions on switching from
+a protocol to another cheaper one.
+
+\section{Conclusion}
+\label{ch:por:sect:conclude}
+In this chapter, we proposed a research direction for building fast and consistent
+geo-replicated system that employs a minimal amount of coordination in
+order to achieve both invariant preservation and state convergence. 
+To this end, we first defined a new generic consistency model called \PRCN, which maps
+consistency requirements to fine-grained restrictions over pairs of operations. Second,
+we developed a static analysis to infer for a given application
+a minimal set of restrictions for ensuring the two previously mentioned properties, in which
+no restrictions can be removed or no new restrictions need to be added. Third, we built an efficient
+coordination service called \coordtool, which offers two different coordination protocols
+suiting for different workloads. Our evaluation of running RUBiS with different
+setups shows that the joint work of \PRCN\ and \coordtool\ significantly
+improves system performance of geo-replicated systems.

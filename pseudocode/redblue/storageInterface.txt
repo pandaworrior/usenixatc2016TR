@@ -1,0 +1,22 @@
+
+
+
+"standard" interface provided by the storage service.  any writes must be temporary table-esque
+the interface must be augmented to extract timestamp information.
+
+// commit is used to initiate coordination with the sequencer
+commit(ShadowOpId id, Parameters params, WriteSet wset, ReadSetWithTimeStamps rset){
+		  send $\langle {\sc commit-request}, id, params, wset, rset \rangle$ to sequencer
+		  wait for commit or abort message
+		  on abort return NULL
+		  on commit return commitSequenceNumber
+}
+
+
+
+
+%%%%%%%%%%%%%% sequencer-used interface follows %%%%%%%%%%%%
+
+execute(ShadowOp id, Paramters params, TimeStamp ts, SequenceNumber ns){
+  //  apply the operation with timestamp and sequence number as appropriate for reading
+}

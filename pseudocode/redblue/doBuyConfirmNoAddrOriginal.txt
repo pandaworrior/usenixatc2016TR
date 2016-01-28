@@ -1,0 +1,15 @@
+doBuyConfirm($cartId$){
+ beginTxn();
+ $cart = $ exec(SELECT * FROM cartTb WHERE cId=$cartId$); 
+ $cost = $ computeCost($cart$); 
+ $orderId = $ getUniqueId();
+ exec(INSERT INTO orderTb VALUES($orderId$,$cart.item.id$,$cart.item.qty$,$cost$));
+ $item = $exec(SELECT * FROM itemTb WHERE id=$cart.item.id$);
+ if $item.stock - cart.item.qty$ < 10 then: 
+    $delta = item.stock-cart.item.qty+21$;
+    if $delta > 0$ then: 
+       exec(UPDATE itemTb SET $item.stock += delta$);
+    else rollback();
+ else exec(UPDATE itemTb SET $item.stock -= cart.item.qty$); 
+ exec(DELETE FROM cartContentTb WHERE cId=$cartId$ AND id=$cart.item.id$); 
+ commit();}

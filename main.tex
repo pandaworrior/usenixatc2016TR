@@ -1,0 +1,194 @@
+% Template modified from someone else's...
+% PF, 2015
+
+\documentclass[a4paper,numbers=noenddot,twoside=true,usenames]{scrbook}
+\usepackage[bottom]{footmisc}
+\deffootnote[1em]{1.5em}{1em}{\textsuperscript{\thefootnotemark}}
+
+\oddsidemargin 1cm
+\evensidemargin 0cm
+\usepackage[ngerman,english]{babel}
+\usepackage{amsmath}
+\usepackage{enumerate}
+\usepackage{pdfpages}
+
+\usepackage[toc,page]{appendix}
+
+\usepackage{epsfig}
+\usepackage[labelfont=bf,indention=5mm]{caption}
+\usepackage{subfig}
+
+\usepackage[sort]{natbib}
+\usepackage{color}
+\usepackage[colorlinks=true,
+            linkcolor=blue,
+            urlcolor=blue,
+            citecolor=green]{hyperref}
+\hypersetup{pdftex,colorlinks=true}%,allcolors=blue} %need to update hyperref.sty file
+\usepackage{hypcap}
+
+\interfootnotelinepenalty=10000
+
+\usepackage[nonumberlist,nomain,acronym,xindy]{glossaries} 
+\usepackage{multirow}
+
+\usepackage{pseudocode}
+\usepackage{array} %for sieve
+\addtolength{\topmargin}{1cm}
+
+
+\definecolor{darkred}{rgb}{0.7,0.0,0.0}
+
+\usepackage{amsfonts}
+\newcommand{\tickYes}{\checkmark}
+\usepackage{pifont}
+\newcommand{\tickNo}{\hspace{1pt}\ding{55}}
+
+\usepackage{listings}
+\lstset{language=Python, tabsize=3}
+
+
+%%specific commands for cheng's thesis
+
+\usepackage{macros}
+\usepackage{grumble}
+\usepackage{mathrsfs}
+\usepackage{amssymb} %for\subsetneq
+\usepackage{algorithm} %for displaying algorithms
+\usepackage{algpseudocode}
+\usepackage{lscape}% make tables vertical
+\usepackage{float}%for fixing the figure positions
+\renewcommand{\textfraction}{0.01}
+\renewcommand{\floatpagefraction}{0.99}
+
+\addtolength{\intextsep}{5mm}
+\addtolength{\abovecaptionskip}{2mm}
+
+\widowpenalty=10000
+\clubpenalty=10000
+\sloppy
+\raggedbottom
+
+\usepackage{setspace}
+\onehalfspacing
+\begin{document}
+
+\graphicspath{{figures/}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\frontmatter
+
+\begin{titlepage}
+\vspace*{\stretch{2}}
+\begin{center}
+{\Huge \textbf{\textsf{Building Fast and Consistent (Geo-)Replicated Systems: from Principles to Practice}}} \\[4em]
+
+{\huge \textsf{Thesis for obtaining the title of Doctor of Engineering Science of the Faculty
+of Natural Science and Technology of Saarland University}} \\[2em]%
+\end{center}
+\vspace*{\stretch{4}}
+\begin{center}
+{\LARGE From}\\[1em]
+{\LARGE \textsf{Cheng Li}}
+%\end{center}
+%\vspace*{\stretch{4}}
+%\begin{center}
+%{\Large \textbf{\textsf{Thesis}}} \\
+~\\
+%\sf Version 1 \\
+%~\\
+%zur Erlangung des Grades \\
+%des Doktors der Ingenieurwissenschaften \\
+%der Naturwissenschaftlich-Technischen Fakult\"aten \\
+%der Universit\"at des Saarlandes \\
+%~\\
+~\\
+%Eingereicht Saarbr\"ucken, 17.~December 2015
+Saarbr\"ucken
+December 2015
+\end{center}
+\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Inner title page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\vspace*{\stretch{0.9}}
+\begin{center}
+{\large
+\begin{tabular}{ll}
+
+\textbf{\textsf{Date of Colloquium:}} & \textsf{TBD} \\
+\textbf{\textsf{Dean of Faculty:}} & \textsf{Univ.-Prof. Dr. Markus Bläser}\\
+~\\
+\textbf{\textsf{Chair of the Committee:}} & \textsf{TBD}\\
+\textbf{\textsf{Reporters}} & \\
+\textbf{\textsf{First Reviewer:}} & \textsf{Prof. Dr. Rodrigo Rodrigues}\\
+\textbf{\textsf{Second Reviewer:}} & \textsf{Prof. Dr. Peter Druschel}\\
+\textbf{\textsf{Third Reviewer:}} & \textsf{Prof. Dr. Robbert van Renesse}\\
+\textbf{\textsf{Academic Assistant:}} & \textsf{TBD}\\
+\end{tabular}
+}
+\end{center}
+\vspace*{\stretch{0.1}}
+
+
+\clearpage
+\cleardoublepage
+
+% Add extra line spacing for review
+\doublespacing
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Content
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\input{abstract}
+
+\input{publication}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\mainmatter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Body
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{intro}
+
+\input{model}
+
+\input{content}
+
+\input{conclusions}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\nocite{*}
+
+%%\linespacing{1.5}
+\bibliography{bibliography}
+\bibliographystyle{alpha}
+
+\clearpage
+\cleardoublepage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

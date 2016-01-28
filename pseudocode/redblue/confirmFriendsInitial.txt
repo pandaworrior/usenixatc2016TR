@@ -1,0 +1,15 @@
+confirmFriend($currentUser$, $newFriend$){
+   beginTxn();
+   $friendRequest \leftarrow$ scanning friendRequest table by $currentUser.id$ and $newFriend.id$;
+   if $friendRequest$ is NULL:
+      $L\_TS \leftarrow$ getCommitOrder();
+      commit(shd_confirmFriendNOOP);
+   $addTime \leftarrow$ getTime(); //local but not logic timestamp
+   exec(UPDATE $currentUser.friendCollection.time = addTime$);
+   exec(UPDATE $newFriend.friendCollection.time = addTime$);
+   exec(INSERT ($currentFriend.friendCollection.id$, $newFriend.id$));
+   exec(INSERT ($newFriend.friendCollection.id$,$currentFriend.id$));
+   exec(DELETE $friendRequest$);
+   $L\_TS \leftarrow$ getCommitOrder();
+   commit(shd_confirmFriend,$currentUser$,$newFriend$,$addTime$,$friendRequest$,$L\_TS$);
+}

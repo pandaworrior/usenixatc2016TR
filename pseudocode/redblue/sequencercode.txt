@@ -1,0 +1,29 @@
+on rcv @\remoteShadowMess{$shdOp$}{$logicalTS$}{$wSet$}@ from remote @\coordinator@:
+   send @\commitShadowMess{$shdOp$}{$logicalTS$}@ to @\datawriter@;
+   updateObject($wSet$,$logicalTS$);
+on rcv @\commitMess{$txn$}@ from @\webproxy@:
+   if not all $objects \in txn.rSet$ from a consistent snapshot:
+      abortTxn(txn);
+   else if $txn$ is red:
+           commitTxn(txn);
+        else if $txn$ is blue:
+           while(acquireBlueToken() == false);
+           if no read-write and write-write conflicts:
+              commitTxn(txn);
+           else abortTxn(txn);
+func abortTxn(txn):
+   send @\abortMess{$txn.id$}@ to @\webproxy@;
+func commitTxn(txn):
+   $txn.logicalTS \leftarrow$ assignTS($txn$);
+   send @\commitShadowMess{$txn.shdOp$}{$txn.logicalTS$}@ to @\datawriter@;
+   send @\remoteShadowMess{$txn.shdOp$}{$txn.logicalTS$}{$txn.wSet$}@ to remote @\coordinator@;  
+   updateObject($txn.wSet$,$txn.logicalTS$);
+func assignTS(txn):
+   if $txn$ is blue:
+     $lastCommitted_{blue}++$;
+   $lastCommitted_{dcId}++$;
+   return $lastCommitted$;
+func updateObject($objSet$,$logicalTS$):
+   foreach $obj \in objSet$:
+      $obj.ts \leftarrow logicalTS$;
+ 

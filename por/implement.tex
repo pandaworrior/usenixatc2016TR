@@ -1,0 +1,51 @@
+\clearpage
+\section{Design and Implementation of \coordtool}
+\label{ch:por:sect:coord}
+In this section we provide a detailed explanation on various points of the design
+and implementation of \coordtool, which adapts applications to run with \tool\
+and \gemini\ under \PRCN.
+
+\subsection{Design rationale}
+
+To minimize coordination overhead, in addition to apply the analysis presented 
+in Section~\ref{ch:por:sect:identify} for statically extracting a minimal set 
+of restrictions, we aim to build an efficient coordination service for enforcing
+restrictions at runtime. This is challenging due to the following observation.
+We observed that there exist several coordination techniques/protocols that can be used
+for enforcing a given restriction, such as Paxos, distributed locking, or escrow techniques. However, depending on the
+frequency at runtime in which the system receives operations confined by a restriction, different coordination approaches 
+lead to different performance tradeoffs. A challenging question
+we need to answer is: how to choose a cheapest protocol for a restriction?
+
+Consider the previously mentioned RUBiS example. In this example,
+maintaining the invariant that winners always match highest 
+bidders requires a restriction between any pair of {\tt placeBid'}
+and {\tt closeAuction'}. The simplest coordination policy would be forcing the two types of shadow operations to pay the same coordination
+cost for figuring out the existence of concurrent peers. However, this solution yields a very poor performance due to the imbalanced workload
+between the two types of shadow operations, i.e., {\tt placeBid'} is more prevalent than {\tt closeAuction'}. As a result, reducing the latency for 
+{\tt placeBid'} while maintaining the corresponding ordering constraint will comprise
+a good user experience. 
+
+In summary, we propose to build a specialized coordination service called \coordtool\ offering
+coordination policies, each of which presents a tradeoff between the cost of each operation and 
+the overall cost. This service allows us to use runtime information about the relative frequency of operations
+to select an efficient coordination mechanism for a given restriction that has lowest cost. 
+
+\input{./por/coordinationpolicy}
+
+\subsection{Interfaces}
+\begin{figure}[t!]
+\centering
+\pseudocodeinput[breaklines=true,mathescape=true]{pseudocode/por/olisipoInterface.txt}
+\caption{Olisipo library interface}
+\label{fig:por:olisipinterface}
+\end{figure}
+In order to accommodate different protocols in \coordtool, we design a set of generic interfaces
+for understanding the programmer specified restrictions and invoking proper protocols for ensuring
+decided restrictions. Figure~\ref{fig:por:olisipinterface} shows the interfaces that library exposes to programmers. 
+{\tt getPermissions} takes the transaction id and the operation name as input, and produces a permission as return.
+{\tt waitForBeingExecuted} executes a loop and only exits if the returned permission is locally satisfied. {\tt cleanUp}
+function removes all used resources and data structures for executing the corresponding shadow operation. The lifecycle of
+every produced shadow operation will be as follows: {\tt getPermission} $\rightarrow$ {\tt waitForBeingExecuted} $\rightarrow$ {\tt cleanUp}.
+
+\input{./por/toolsupport}

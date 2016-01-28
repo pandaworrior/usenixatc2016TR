@@ -1,0 +1,17 @@
+func $beginTxn$($txn$):
+  $txn.id \leftarrow$ unique transaction id;
+  send @\beginMess{$txn.id$}@ to @\coordinator@;
+  on rcv @\beginAckMess{$txn.id$}{$startTS$}@ from @\coordinator@;
+  call @\storage@ to create a scratchpad containing private tables;
+func $execute$($txn, op$):
+  if $op$ is readonly:
+     $txn.result,txn.readset \leftarrow$ @\storage@ reflects $udpates$ in private tables;
+     return $txn.result$;
+  $txn.writeset \leftarrow$ call @\storage@ to put $op.updates$ in private tables;
+  return ok;
+func $commit$($txn$):
+  $txn.shdOp \leftarrow$ shadow operation with arguments;
+  send @\commitMess{$txn$}@ to @\coordinator@;
+  on rcv reply from @\coordinator@:
+     if reply == commit then return true;
+     else return false;

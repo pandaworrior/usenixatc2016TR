@@ -1,0 +1,8 @@
+func txnShadow(int[] obsX, int[] deltaA){
+    for (i = 0; i < obsX.length; i++){
+        if(obsX[i] < 100)
+            CRDT_x[i].applyDelta(deltaA[i]);
+        else:
+            CRDT_x[i].applyDelta(deltaA[i]); 
+    }  
+}
